@@ -131,13 +131,10 @@ const App = {
       // Populate filter dropdowns
       this.populateFilterOptions();
 
-      // Render Demo Arena with first project (default: Malaysia-Travel-Apps or banana-dashboard)
-      const defaultName = this.currentConfig.settings.defaultActiveDemo || 'Malaysia-Travel-Apps';
-      const initialDemo = this.allProjects.find(p => p.name === defaultName) || this.allProjects[0];
-      if (initialDemo) {
-        this.renderDemoArenaTabs();
-        this.loadDemoIntoArena(initialDemo);
-      }
+      // Standby mode on initial load: only show screen when user selects a project!
+      this.activeDemoProject = null;
+      this.renderDemoArenaTabs();
+      this.renderStandbyScreen();
 
       // Render cards
       this.renderProjectsGrid();
@@ -198,18 +195,76 @@ const App = {
     container.querySelectorAll('.demo-tab-btn').forEach(btn => {
       btn.addEventListener('click', (e) => {
         const repoName = e.currentTarget.getAttribute('data-repo');
-        const project = this.allProjects.find(p => p.name === repoName);
-        if (project) {
-          this.loadDemoIntoArena(project);
-        }
+        this.selectProjectByName(repoName);
       });
     });
+  },
+
+  selectProjectByName(repoName) {
+    const project = this.allProjects.find(p => p.name === repoName);
+    if (project) {
+      this.loadDemoIntoArena(project);
+    }
+  },
+
+  renderStandbyScreen() {
+    this.activeDemoProject = null;
+    document.querySelectorAll('.demo-tab-btn').forEach(btn => btn.classList.remove('active'));
+
+    // Hide controls toolbar when no project is selected
+    const controls = document.getElementById('arena-controls-bar');
+    if (controls) controls.style.display = 'none';
+
+    // Reset info footer
+    document.getElementById('arena-project-title').textContent = 'Live Interactive Demo Arena';
+    document.getElementById('arena-project-desc').textContent = 'Click any project tab above or "Play Demo" on a card below to launch the live screen.';
+
+    const tagsContainer = document.getElementById('arena-project-tags');
+    if (tagsContainer) tagsContainer.innerHTML = '';
+
+    const githubLink = document.getElementById('arena-github-link');
+    if (githubLink) githubLink.style.display = 'none';
+
+    // Render Standby Card in the Stage
+    const stage = document.getElementById('demo-viewport-stage');
+    if (!stage) return;
+
+    stage.innerHTML = `
+      <div class="demo-standby-screen">
+        <div class="standby-icon-badge">✨</div>
+        <h3 style="font-size:1.5rem; font-weight:800; margin-bottom:0.6rem; color:var(--text-main);">
+          Select a Project to Launch the Screen
+        </h3>
+        <p style="color:var(--text-muted); font-size:0.95rem; line-height:1.6; max-width:520px; margin-bottom:1.75rem;">
+          Click any project tab above to open its live interactive simulator.
+        </p>
+        <div style="display:flex; flex-wrap:wrap; justify-content:center; gap:0.75rem;">
+          <button class="btn-primary" onclick="App.selectProjectByName('banana-dashboard')">
+            💻 Launch Banana Dashboard (Desktop)
+          </button>
+          <button class="btn-secondary" onclick="App.selectProjectByName('Malaysia-Travel-Apps')">
+            📱 Launch Malaysia Travel App (Phone)
+          </button>
+        </div>
+      </div>
+    `;
   },
 
   loadDemoIntoArena(project, defaultMode = null) {
     this.activeDemoProject = project;
 
-    // Use defaultMode if explicitly given, otherwise project's default demoType
+    // Reveal controls toolbar
+    const controls = document.getElementById('arena-controls-bar');
+    if (controls) controls.style.display = 'flex';
+
+    // Reveal GitHub link
+    const githubLink = document.getElementById('arena-github-link');
+    if (githubLink) {
+      githubLink.href = project.htmlUrl;
+      githubLink.style.display = 'inline-flex';
+    }
+
+    // Set device mode
     if (defaultMode) {
       this.activeDeviceMode = defaultMode;
     } else if (project.demoType) {
@@ -232,9 +287,6 @@ const App = {
       tagsContainer.innerHTML = (project.tags || []).slice(0, 4).map(t => `<span class="tag-pill">${t}</span>`).join('');
     }
 
-    const githubLink = document.getElementById('arena-github-link');
-    if (githubLink) githubLink.href = project.htmlUrl;
-
     const demoUrlPill = document.getElementById('arena-url-display');
     if (demoUrlPill) {
       demoUrlPill.textContent = project.demoUrl || `simulated://${project.name}.app`;
@@ -242,6 +294,9 @@ const App = {
 
     // Render simulator frame
     this.renderSimulatorFrame();
+
+    // Smoothly scroll to arena if needed
+    document.getElementById('demo-arena-section')?.scrollIntoView({ behavior: 'smooth' });
   },
 
   updateDeviceButtons() {

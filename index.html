@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">ChingKheat | Interactive Project Showcase & Live Demos</title>
-  <link rel="stylesheet" href="css/style.css?v=3.0">
+  <link rel="stylesheet" href="css/style.css?v=4.0">
 </head>
 <body>
 
@@ -102,8 +102,8 @@
           <!-- Populated by app.js: Malaysia-Travel-Apps, banana-dashboard, etc. -->
         </div>
 
-        <!-- Arena Simulator Controls Toolbar -->
-        <div class="arena-controls-bar">
+        <!-- Arena Simulator Controls Toolbar (Hidden until project is selected) -->
+        <div class="arena-controls-bar" id="arena-controls-bar" style="display:none;">
           <div class="device-switcher">
             <button id="device-mobile-btn" class="device-btn active" onclick="App.setDeviceMode('mobile')" title="Switch to Mobile Smartphone Frame">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -144,6 +144,9 @@
                 <line x1="10" y1="14" x2="21" y2="3"></line>
               </svg>
               Open Tab
+            </button>
+            <button id="arena-close-btn" class="arena-btn" onclick="App.renderStandbyScreen()" title="Close Screen & Return to Project Selection" style="color:var(--accent-danger); border-color:rgba(248,81,73,0.3);">
+              ✕ Close Screen
             </button>
           </div>
         </div>
@@ -265,8 +268,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/github-api.js?v=3.0"></script>
-  <script src="js/config-manager.js?v=3.0"></script>
-  <script src="js/app.js?v=3.0"></script>
+  <script src="js/github-api.js?v=4.0"></script>
+  <script src="js/config-manager.js?v=4.0"></script>
+  <script src="js/app.js?v=4.0"></script>
 </body>
 </html>
