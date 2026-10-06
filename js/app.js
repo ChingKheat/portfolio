@@ -25,6 +25,7 @@ const App = {
     this.initTheme();
     this.bindEvents();
     await this.loadData();
+    this.initAutoSync();
   },
 
   initTheme() {
@@ -356,6 +357,74 @@ const App = {
       toast.style.transition = 'opacity 0.3s ease';
       setTimeout(() => toast.remove(), 300);
     }, 3200);
+  },
+
+  lastSyncTime: Date.now(),
+
+  initAutoSync() {
+    const chip = document.getElementById('auto-sync-chip');
+    if (chip) {
+      chip.addEventListener('click', () => this.syncFromGitHub(true));
+    }
+
+    // Auto-sync when user returns to tab after > 3 minutes
+    window.addEventListener('focus', () => {
+      const now = Date.now();
+      if (now - this.lastSyncTime > 3 * 60 * 1000) {
+        this.syncFromGitHub(false);
+      }
+    });
+
+    // Periodic background sync every 10 minutes
+    setInterval(() => {
+      this.syncFromGitHub(false);
+    }, 10 * 60 * 1000);
+  },
+
+  async syncFromGitHub(isManual = false) {
+    const dot = document.getElementById('sync-dot');
+    const label = document.getElementById('sync-label');
+
+    if (dot) {
+      dot.style.background = '#e3b341';
+      dot.style.boxShadow = '0 0 8px #e3b341';
+    }
+    if (label) label.textContent = 'Syncing...';
+
+    try {
+      const username = (this.currentConfig && this.currentConfig.settings && this.currentConfig.settings.githubUsername) || 'ChingKheat';
+      
+      // Fetch fresh repos with forceRefresh=true
+      if (typeof GitHubAPI !== 'undefined' && GitHubAPI.getUserRepositories) {
+        const freshRepos = await GitHubAPI.getUserRepositories(username, true, 0).catch(() => []);
+        
+        if (freshRepos && freshRepos.length > 0) {
+          const merged = ConfigManager.mergeReposWithConfig(freshRepos, this.currentConfig);
+          this.allProjects = merged.filter(p => p.visible !== false);
+          this.applyFilters();
+        }
+      }
+
+      this.lastSyncTime = Date.now();
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+      if (dot) {
+        dot.style.background = '#3fb950';
+        dot.style.boxShadow = '0 0 8px rgba(63, 185, 80, 0.4)';
+      }
+      if (label) label.textContent = `Synced ${timeStr}`;
+
+      if (isManual) {
+        this.showToast('Synchronized with GitHub successfully!', 'success');
+      }
+    } catch (e) {
+      console.warn('Auto-sync background check failed:', e);
+      if (dot) {
+        dot.style.background = '#3fb950';
+        dot.style.boxShadow = '';
+      }
+      if (label) label.textContent = 'Auto-Sync Active';
+    }
   }
 };
 

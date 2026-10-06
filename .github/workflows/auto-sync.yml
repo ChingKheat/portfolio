@@ -1,0 +1,42 @@
+name: Automated Repository Sync
+
+on:
+  schedule:
+    # Run twice daily at 00:00 and 12:00 UTC
+    - cron: '0 0,12 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync-repositories:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run Auto-Sync Script
+        env:
+          SYNC_PAT: ${{ secrets.SYNC_PAT || secrets.GITHUB_TOKEN }}
+        run: |
+          python scripts/sync-repos.py
+
+      - name: Commit and Push Updates
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain projects-config.json)" ]; then
+            git add projects-config.json
+            git commit -m "chore(auto-sync): update projects-config.json from GitHub [skip ci]"
+            git push
+          else
+            echo "No repository changes detected. Config is already up to date."
+          fi

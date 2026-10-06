@@ -21,13 +21,20 @@
       "priority": 1,
       "customTitle": "Banana Ripeness Master Dashboard",
       "customDescription": "Machine learning and computer vision analytics dashboard comparing 5 ripeness classification algorithms with live visual metrics.",
-      "tags": ["HTML", "Tailwind CSS", "Data Analytics", "Computer Vision", "Machine Learning"],
+      "tags": [
+        "HTML",
+        "Tailwind CSS",
+        "Data Analytics",
+        "Computer Vision",
+        "Machine Learning"
+      ],
       "demoUrl": "https://chingkheat.github.io/banana-dashboard/",
       "demoType": "desktop",
       "hasLiveDemo": true,
       "coverImage": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
       "badge": "Live Web App",
-      "demoNote": "5-Algorithm Master Dashboard with interactive metric comparisons and data visualizations."
+      "demoNote": "5-Algorithm Master Dashboard with interactive metric comparisons and data visualizations.",
+      "isPrivate": false
     },
     "Malaysia-Travel-Apps": {
       "visible": true,
@@ -35,13 +42,20 @@
       "priority": 2,
       "customTitle": "Malaysia Travel Mobile App",
       "customDescription": "An interactive mobile travel guide application built with Flutter to explore Malaysia's tourist destinations, authentic food spots, and cultural heritage.",
-      "tags": ["Flutter", "Dart", "Mobile App", "Travel", "Tourism"],
+      "tags": [
+        "Flutter",
+        "Dart",
+        "Mobile App",
+        "Travel",
+        "Tourism"
+      ],
       "demoUrl": "https://chingkheat.github.io/Malaysia-Travel-Apps/",
       "demoType": "mobile",
       "hasLiveDemo": true,
       "coverImage": "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80",
       "badge": "Flutter Web Demo",
-      "demoNote": "Interactive Flutter Web application. Explore destinations and tap through the mobile UI."
+      "demoNote": "Interactive Flutter Web application. Explore destinations and tap through the mobile UI.",
+      "isPrivate": false
     },
     "geo_heritage_personal": {
       "visible": true,
@@ -50,7 +64,13 @@
       "isPrivate": true,
       "customTitle": "GeoHeritage (Personal Edition)",
       "customDescription": "A cultural exploration and preservation mobile platform with interactive navigation, Geobot AI cultural guide, and gamified digital passport achievements.",
-      "tags": ["Flutter", "Dart", "Gemini AI", "Mobile App", "Google Maps"],
+      "tags": [
+        "Flutter",
+        "Dart",
+        "Gemini AI",
+        "Mobile App",
+        "Google Maps"
+      ],
       "demoUrl": "",
       "demoType": "mobile",
       "hasLiveDemo": false,
@@ -65,7 +85,13 @@
       "isPrivate": true,
       "customTitle": "GeoHeritage (Assignment Edition)",
       "customDescription": "University Collaborative Development group assignment app featuring interactive GPS mapping, Geobot cultural assistant, and community preservation reporting.",
-      "tags": ["Flutter", "Dart", "Group Assignment", "Google Maps", "Gemini AI"],
+      "tags": [
+        "Flutter",
+        "Dart",
+        "Group Assignment",
+        "Google Maps",
+        "Gemini AI"
+      ],
       "demoUrl": "",
       "demoType": "mobile",
       "hasLiveDemo": false,
@@ -79,13 +105,20 @@
       "priority": 5,
       "customTitle": "Nuxt AI Conversational Assistant",
       "customDescription": "AI-powered conversational chatbot assistant built with Nuxt 3 and Vue featuring streaming answers and modern prompt responses.",
-      "tags": ["Vue", "Nuxt.js", "AI Chatbot", "LLM", "Full Stack"],
+      "tags": [
+        "Vue",
+        "Nuxt.js",
+        "AI Chatbot",
+        "LLM",
+        "Full Stack"
+      ],
       "demoUrl": "",
       "demoType": "desktop",
       "hasLiveDemo": false,
       "coverImage": "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80",
       "badge": "AI Assistant",
-      "demoNote": "Full-stack AI assistant with interactive chat stream capabilities."
+      "demoNote": "Full-stack AI assistant with interactive chat stream capabilities.",
+      "isPrivate": false
     },
     "SmashDash_CourtBooking": {
       "visible": true,
@@ -93,13 +126,20 @@
       "priority": 6,
       "customTitle": "SmashDash - Badminton Court Booking",
       "customDescription": "Comprehensive mobile badminton venue reservation system allowing players to browse courts, check real-time availability, and reserve time slots.",
-      "tags": ["Flutter", "Dart", "Mobile App", "Court Booking", "Sports"],
+      "tags": [
+        "Flutter",
+        "Dart",
+        "Mobile App",
+        "Court Booking",
+        "Sports"
+      ],
       "demoUrl": "",
       "demoType": "mobile",
       "hasLiveDemo": false,
       "coverImage": "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80",
       "badge": "Mobile Booking",
-      "demoNote": "Sports facility booking platform with court schedules and player profiles."
+      "demoNote": "Sports facility booking platform with court schedules and player profiles.",
+      "isPrivate": false
     },
     "portfolio": {
       "visible": true,
@@ -107,13 +147,20 @@
       "priority": 7,
       "customTitle": "Interactive Project Showcase & Arena",
       "customDescription": "Developer portfolio showcase and live demo execution environment featuring mobile & desktop simulators, responsive UI, and GitHub API integration.",
-      "tags": ["JavaScript", "HTML5", "CSS3", "GitHub API", "Portfolio"],
+      "tags": [
+        "JavaScript",
+        "HTML5",
+        "CSS3",
+        "GitHub API",
+        "Portfolio"
+      ],
       "demoUrl": "https://chingkheat.github.io/portfolio/",
       "demoType": "desktop",
       "hasLiveDemo": true,
       "coverImage": "https://images.unsplash.com/photo-1507238691740-187a5b1d37b8?auto=format&fit=crop&w=800&q=80",
       "badge": "Live Web App",
-      "demoNote": "Live interactive developer portfolio."
+      "demoNote": "Live interactive developer portfolio.",
+      "isPrivate": false
     },
     "Java-OOPT": {
       "visible": true,
@@ -121,13 +168,19 @@
       "priority": 8,
       "customTitle": "Java OOP Architecture Project",
       "customDescription": "Object-Oriented Programming and software design patterns implementation showcasing solid principles, class hierarchies, and modular structure.",
-      "tags": ["Java", "OOP", "Software Design", "Design Patterns"],
+      "tags": [
+        "Java",
+        "OOP",
+        "Software Design",
+        "Design Patterns"
+      ],
       "demoUrl": "",
       "demoType": "desktop",
       "hasLiveDemo": false,
       "coverImage": "https://images.unsplash.com/photo-1517694712202-14dd9538aa97?auto=format&fit=crop&w=800&q=80",
       "badge": "Java Architecture",
-      "demoNote": ""
+      "demoNote": "",
+      "isPrivate": false
     },
     "SmashDash": {
       "visible": true,
@@ -135,13 +188,18 @@
       "priority": 9,
       "customTitle": "SmashDash - Badminton Venue System",
       "customDescription": "Core mobile court booking architecture and venue scheduling platform built with Flutter.",
-      "tags": ["Flutter", "Dart", "Sports Management"],
+      "tags": [
+        "Flutter",
+        "Dart",
+        "Sports Management"
+      ],
       "demoUrl": "",
       "demoType": "mobile",
       "hasLiveDemo": false,
       "coverImage": "https://images.unsplash.com/photo-1521537634581-0dced2fee2ef?auto=format&fit=crop&w=800&q=80",
       "badge": "Mobile App",
-      "demoNote": ""
+      "demoNote": "",
+      "isPrivate": false
     },
     "CDTest": {
       "visible": true,
@@ -149,13 +207,18 @@
       "priority": 10,
       "customTitle": "CDTest - Continuous Integration Pipeline",
       "customDescription": "Continuous integration, automated builds, and deployment verification testing pipeline.",
-      "tags": ["CI/CD", "DevOps", "Automation"],
+      "tags": [
+        "CI/CD",
+        "DevOps",
+        "Automation"
+      ],
       "demoUrl": "",
       "demoType": "desktop",
       "hasLiveDemo": false,
       "coverImage": "https://images.unsplash.com/photo-1618401471353-b98aedd04e11?auto=format&fit=crop&w=800&q=80",
       "badge": "DevOps / CI",
-      "demoNote": ""
+      "demoNote": "",
+      "isPrivate": false
     }
   }
 }
