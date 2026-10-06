@@ -206,11 +206,17 @@ const App = {
     });
   },
 
-  loadDemoIntoArena(project) {
+  loadDemoIntoArena(project, defaultMode = null) {
     this.activeDemoProject = project;
 
-    // Set device mode to project's preferred mode (e.g. mobile for Flutter app)
-    this.setDeviceMode(project.demoType || 'mobile', false);
+    // Use defaultMode if explicitly given, otherwise project's default demoType
+    if (defaultMode) {
+      this.activeDeviceMode = defaultMode;
+    } else if (project.demoType) {
+      this.activeDeviceMode = project.demoType;
+    }
+
+    this.updateDeviceButtons();
 
     // Update active tab styling
     document.querySelectorAll('.demo-tab-btn').forEach(btn => {
@@ -234,9 +240,26 @@ const App = {
       demoUrlPill.textContent = project.demoUrl || `simulated://${project.name}.app`;
     }
 
-    // Render viewport content
+    // Render simulator frame
+    this.renderSimulatorFrame();
+  },
+
+  updateDeviceButtons() {
+    document.getElementById('device-mobile-btn')?.classList.toggle('active', this.activeDeviceMode === 'mobile');
+    document.getElementById('device-desktop-btn')?.classList.toggle('active', this.activeDeviceMode === 'desktop');
+  },
+
+  setDeviceMode(mode) {
+    this.activeDeviceMode = mode;
+    this.updateDeviceButtons();
+    this.renderSimulatorFrame();
+    this.showToast(`Switched to ${mode === 'desktop' ? 'Desktop View' : 'Phone View'}`, 'info');
+  },
+
+  renderSimulatorFrame() {
     const stage = document.getElementById('demo-viewport-stage');
-    if (!stage) return;
+    const project = this.activeDemoProject;
+    if (!stage || !project) return;
 
     if (project.demoUrl) {
       // Live iframe preview
@@ -300,16 +323,6 @@ const App = {
           </div>
         </div>
       `;
-    }
-  },
-
-  setDeviceMode(mode, reload = true) {
-    this.activeDeviceMode = mode;
-    document.getElementById('device-mobile-btn')?.classList.toggle('active', mode === 'mobile');
-    document.getElementById('device-desktop-btn')?.classList.toggle('active', mode === 'desktop');
-
-    if (reload && this.activeDemoProject) {
-      this.loadDemoIntoArena(this.activeDemoProject);
     }
   },
 
