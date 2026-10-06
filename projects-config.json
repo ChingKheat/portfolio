@@ -12,27 +12,13 @@
     "adminPin": "admin123",
     "theme": "dark",
     "cacheTtlMinutes": 60,
-    "defaultActiveDemo": "Malaysia-Travel-Apps"
+    "defaultActiveDemo": "banana-dashboard"
   },
   "projects": {
-    "Malaysia-Travel-Apps": {
-      "visible": true,
-      "pinned": true,
-      "priority": 1,
-      "customTitle": "Malaysia Travel Mobile App",
-      "customDescription": "An interactive mobile travel guide application built with Flutter to explore Malaysia's tourist destinations, authentic food spots, and cultural heritage.",
-      "tags": ["Flutter", "Dart", "Mobile App", "Travel", "Tourism"],
-      "demoUrl": "https://chingkheat.github.io/Malaysia-Travel-Apps/",
-      "demoType": "mobile",
-      "hasLiveDemo": true,
-      "coverImage": "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80",
-      "badge": "Flutter Web Demo",
-      "demoNote": "Interactive Flutter Web application. Explore destinations and tap through the mobile UI."
-    },
     "banana-dashboard": {
       "visible": true,
       "pinned": true,
-      "priority": 2,
+      "priority": 1,
       "customTitle": "Banana Ripeness Master Dashboard",
       "customDescription": "Machine learning and computer vision analytics dashboard comparing 5 ripeness classification algorithms with live visual metrics.",
       "tags": ["HTML", "Tailwind CSS", "Data Analytics", "Computer Vision", "Machine Learning"],
@@ -42,6 +28,20 @@
       "coverImage": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
       "badge": "Live Web App",
       "demoNote": "5-Algorithm Master Dashboard with interactive metric comparisons and data visualizations."
+    },
+    "Malaysia-Travel-Apps": {
+      "visible": true,
+      "pinned": true,
+      "priority": 2,
+      "customTitle": "Malaysia Travel Mobile App",
+      "customDescription": "An interactive mobile travel guide application built with Flutter to explore Malaysia's tourist destinations, authentic food spots, and cultural heritage.",
+      "tags": ["Flutter", "Dart", "Mobile App", "Travel", "Tourism"],
+      "demoUrl": "https://chingkheat.github.io/Malaysia-Travel-Apps/",
+      "demoType": "mobile",
+      "hasLiveDemo": true,
+      "coverImage": "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80",
+      "badge": "Flutter Web Demo",
+      "demoNote": "Interactive Flutter Web application. Explore destinations and tap through the mobile UI."
     },
     "nuxt-ai-chatbot": {
       "visible": true,

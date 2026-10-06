@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">ChingKheat | Interactive Project Showcase & Live Demos</title>
-  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/style.css?v=3.0">
 </head>
 <body>
 
@@ -105,14 +105,14 @@
         <!-- Arena Simulator Controls Toolbar -->
         <div class="arena-controls-bar">
           <div class="device-switcher">
-            <button id="device-mobile-btn" class="device-btn active" title="Switch to Mobile Smartphone Frame">
+            <button id="device-mobile-btn" class="device-btn active" onclick="App.setDeviceMode('mobile')" title="Switch to Mobile Smartphone Frame">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
                 <line x1="12" y1="18" x2="12.01" y2="18"></line>
               </svg>
               Phone View
             </button>
-            <button id="device-desktop-btn" class="device-btn" title="Switch to Desktop / Laptop Frame">
+            <button id="device-desktop-btn" class="device-btn" onclick="App.setDeviceMode('desktop')" title="Switch to Desktop / Laptop Frame">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
                 <line x1="8" y1="21" x2="16" y2="21"></line>
@@ -123,7 +123,7 @@
           </div>
 
           <div class="arena-action-btns">
-            <button id="arena-reload-btn" class="arena-btn" title="Reload demo session">
+            <button id="arena-reload-btn" class="arena-btn" onclick="App.reloadActiveDemo()" title="Reload demo session">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <polyline points="23 4 23 10 17 10"></polyline>
                 <polyline points="1 20 1 14 7 14"></polyline>
@@ -131,7 +131,7 @@
               </svg>
               Reload
             </button>
-            <button id="arena-fullscreen-btn" class="arena-btn" title="Toggle Fullscreen">
+            <button id="arena-fullscreen-btn" class="arena-btn" onclick="App.toggleArenaFullscreen()" title="Toggle Fullscreen">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
               </svg>
@@ -265,8 +265,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/github-api.js"></script>
-  <script src="js/config-manager.js"></script>
-  <script src="js/app.js"></script>
+  <script src="js/github-api.js?v=3.0"></script>
+  <script src="js/config-manager.js?v=3.0"></script>
+  <script src="js/app.js?v=3.0"></script>
 </body>
 </html>
