@@ -1,0 +1,97 @@
+{
+  "settings": {
+    "githubUsername": "ChingKheat",
+    "dashboardTitle": "ChingKheat's Project Portfolio",
+    "dashboardSubtitle": "Showcase of software engineering projects, mobile apps, and open-source experiments",
+    "avatarUrl": "",
+    "bioOverride": "",
+    "socialLinks": {
+      "github": "https://github.com/ChingKheat",
+      "linkedin": "",
+      "website": "",
+      "email": "chingkheat@gmail.com"
+    },
+    "adminPin": "admin123",
+    "theme": "dark",
+    "cacheTtlMinutes": 60
+  },
+  "projects": {
+    "Malaysia-Travel-Apps": {
+      "visible": true,
+      "pinned": true,
+      "priority": 1,
+      "customTitle": "Malaysia Travel Apps",
+      "customDescription": "A modern mobile travel application built with Flutter/Dart to explore attractions, food, and culture across Malaysia.",
+      "tags": ["Flutter", "Dart", "Mobile", "Travel"],
+      "demoUrl": "",
+      "coverImage": "https://images.unsplash.com/photo-1596422846543-75c6fc197f07?auto=format&fit=crop&w=800&q=80",
+      "badge": "Mobile"
+    },
+    "nuxt-ai-chatbot": {
+      "visible": true,
+      "pinned": true,
+      "priority": 2,
+      "customTitle": "Nuxt AI Chatbot",
+      "customDescription": "Intelligent conversational chatbot application built with Nuxt.js and Vue, featuring modern AI interactions.",
+      "tags": ["Vue", "Nuxt.js", "AI", "Chatbot"],
+      "demoUrl": "",
+      "coverImage": "https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80",
+      "badge": "AI & Web"
+    },
+    "SmashDash_CourtBooking": {
+      "visible": true,
+      "pinned": true,
+      "priority": 3,
+      "customTitle": "SmashDash - Badminton Court Booking",
+      "customDescription": "Badminton court booking platform built with Flutter, allowing players to discover courts, check schedules, and make reservations.",
+      "tags": ["Flutter", "Dart", "Mobile", "Booking System"],
+      "demoUrl": "",
+      "coverImage": "https://images.unsplash.com/photo-1626224583764-f87db24ac4ea?auto=format&fit=crop&w=800&q=80",
+      "badge": "Mobile"
+    },
+    "banana-dashboard": {
+      "visible": true,
+      "pinned": false,
+      "priority": 4,
+      "customTitle": "Banana Dashboard",
+      "customDescription": "Interactive web analytics and management dashboard interface.",
+      "tags": ["HTML", "CSS", "Dashboard", "UI/UX"],
+      "demoUrl": "",
+      "coverImage": "https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80",
+      "badge": "Web App"
+    },
+    "Java-OOPT": {
+      "visible": true,
+      "pinned": false,
+      "priority": 5,
+      "customTitle": "Java Object-Oriented Project",
+      "customDescription": "Object-Oriented Programming and Design architecture implementation in Java.",
+      "tags": ["Java", "OOP", "Software Design"],
+      "demoUrl": "",
+      "coverImage": "",
+      "badge": "Java"
+    },
+    "SmashDash": {
+      "visible": false,
+      "pinned": false,
+      "priority": 6,
+      "customTitle": "SmashDash (Legacy)",
+      "customDescription": "Legacy repository for Badminton Court Booking.",
+      "tags": ["Legacy", "Archived"],
+      "demoUrl": "",
+      "coverImage": "",
+      "badge": ""
+    },
+    "CDTest": {
+      "visible": false,
+      "pinned": false,
+      "priority": 7,
+      "customTitle": "CDTest (Internal)",
+      "customDescription": "Continuous Delivery and automation testing repository.",
+      "tags": ["CI/CD", "Test"],
+      "demoUrl": "",
+      "coverImage": "",
+      "badge": ""
+    }
+  }
+}

@@ -1,0 +1,11 @@
+# Cache & temporary files
+__pycache__/
+*.py[cod]
+.DS_Store
+Thumbs.db
+
+# IDE & system
+.vscode/
+.idea/
+.system_generated/
+scratch/

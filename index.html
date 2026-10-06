@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title id="page-title">Project Showcase & GitHub Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+  <!-- Markdown parser for GitHub README files -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <nav class="navbar">
+    <div class="container nav-content">
+      <div class="nav-brand">
+        <svg width="24" height="24" viewBox="0 0 16 16">
+          <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+        </svg>
+        <span id="nav-brand-title">Project Showcase</span>
+      </div>
+      <div class="nav-actions">
+        <!-- Dark/Light Theme Toggle -->
+        <button id="theme-toggle-btn" class="icon-btn" aria-label="Toggle theme" title="Toggle theme">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+          </svg>
+        </button>
+        <!-- Admin Site Button -->
+        <a href="admin.html" class="btn-secondary" title="Access Admin Site">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Admin Portal
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Profile Header -->
+  <header class="hero-section">
+    <div class="container">
+      <div class="profile-card">
+        <div class="avatar-wrapper">
+          <img id="user-avatar" src="https://github.com/ChingKheat.png" alt="Profile Avatar">
+          <span class="avatar-badge" title="Active on GitHub"></span>
+        </div>
+        <div class="profile-info">
+          <div class="profile-name-row">
+            <h1 class="profile-name" id="user-name">ChingKheat</h1>
+            <a href="https://github.com/ChingKheat" target="_blank" rel="noopener" class="profile-handle" id="user-handle">@ChingKheat</a>
+          </div>
+          <p class="profile-bio" id="user-bio">Showcase of software engineering projects, mobile apps, and open-source experiments.</p>
+          <div class="profile-stats-bar">
+            <div class="stat-chip">
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 0 1 1-1h8z"/>
+              </svg>
+              <span><strong id="stat-total-repos">0</strong> Repositories</span>
+            </div>
+            <a href="https://github.com/ChingKheat" id="user-github-link" target="_blank" rel="noopener" class="stat-chip" style="color:var(--accent-primary);">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+              </svg>
+              <span>View GitHub Profile &rarr;</span>
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Languages Distribution Breakdown -->
+      <div class="lang-summary-card">
+        <div class="lang-progress-bar" id="lang-progress-bar"></div>
+        <div class="lang-legend" id="lang-legend"></div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="container">
+
+    <!-- Featured / Spotlight Section -->
+    <section class="section" id="featured-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          Featured Projects
+        </h2>
+        <span style="font-size: 0.88rem; color: var(--text-muted);" id="header-subtitle">Handpicked highlights & live applications</span>
+      </div>
+      <div class="featured-grid" id="featured-grid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+    <!-- All Repositories Section -->
+    <section class="section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M1 2.5A2.5 2.5 0 0 1 3.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 1 11.5v-9z"/>
+          </svg>
+          All Projects
+        </h2>
+        <span id="project-results-count" style="font-size: 0.88rem; color: var(--text-muted);">Loading projects...</span>
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="toolbar">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="search-input" placeholder="Search by repository name, keyword, or tag..." autocomplete="off">
+        </div>
+
+        <div class="filters-group">
+          <!-- Language filter -->
+          <select id="language-filter" class="select-control">
+            <option value="all">All Languages</option>
+          </select>
+
+          <!-- Tag filter -->
+          <select id="tag-filter" class="select-control">
+            <option value="all">All Tags</option>
+          </select>
+
+          <!-- Sort dropdown -->
+          <select id="sort-select" class="select-control">
+            <option value="updated">Recently Updated</option>
+            <option value="stars">Most Stars</option>
+            <option value="name">Name (A-Z)</option>
+            <option value="size">Repository Size</option>
+          </select>
+
+          <!-- Grid / List View Toggle -->
+          <div class="view-toggle">
+            <button id="view-grid-btn" class="view-btn active" title="Grid View">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="3" y="3" width="7" height="7"></rect>
+                <rect x="14" y="3" width="7" height="7"></rect>
+                <rect x="14" y="14" width="7" height="7"></rect>
+                <rect x="3" y="14" width="7" height="7"></rect>
+              </svg>
+            </button>
+            <button id="view-list-btn" class="view-btn" title="List View">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="8" y1="6" x2="21" y2="6"></line>
+                <line x1="8" y1="12" x2="21" y2="12"></line>
+                <line x1="8" y1="18" x2="21" y2="18"></line>
+                <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                <line x1="3" y1="18" x2="3.01" y2="18"></line>
+              </svg>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Projects Grid -->
+      <div id="projects-grid" class="projects-grid">
+        <!-- Rendered dynamically by app.js -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Project Details Modal -->
+  <div id="project-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+    <div class="modal-container">
+      <div class="modal-header">
+        <div class="modal-title">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 0 1 1-1h8z"/>
+          </svg>
+          <span id="modal-repo-name">Project Details</span>
+        </div>
+        <button id="modal-close-btn" class="modal-close" aria-label="Close dialog">&times;</button>
+      </div>
+
+      <!-- Modal Tabs -->
+      <div class="modal-tabs">
+        <button class="tab-btn active" data-tab="overview">Overview</button>
+        <button class="tab-btn" data-tab="readme">README.md</button>
+      </div>
+
+      <div class="modal-content">
+        <!-- Tab 1: Overview -->
+        <div id="tab-overview" class="tab-pane">
+          <p id="modal-desc" style="font-size: 1rem; color: var(--text-muted); line-height: 1.6; margin-bottom: 1rem;"></p>
+
+          <div id="modal-tags" class="tags-row"></div>
+
+          <div class="clone-box">
+            <span style="color:var(--text-dim); user-select:none;">$</span>
+            <code id="modal-clone-code">git clone https://github.com/...</code>
+            <button id="modal-copy-clone-btn" class="btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.78rem;">
+              Copy
+            </button>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin: 1.25rem 0;">
+            <div style="background:var(--bg-surface-elevated); padding:0.75rem; border-radius:var(--radius-md); text-align:center;">
+              <div style="font-size:0.75rem; color:var(--text-dim);">STARS</div>
+              <div style="font-size:1.25rem; font-weight:700;" id="modal-stat-stars">0</div>
+            </div>
+            <div style="background:var(--bg-surface-elevated); padding:0.75rem; border-radius:var(--radius-md); text-align:center;">
+              <div style="font-size:0.75rem; color:var(--text-dim);">FORKS</div>
+              <div style="font-size:1.25rem; font-weight:700;" id="modal-stat-forks">0</div>
+            </div>
+            <div style="background:var(--bg-surface-elevated); padding:0.75rem; border-radius:var(--radius-md); text-align:center;">
+              <div style="font-size:0.75rem; color:var(--text-dim);">WATCHERS</div>
+              <div style="font-size:1.25rem; font-weight:700;" id="modal-stat-watchers">0</div>
+            </div>
+            <div style="background:var(--bg-surface-elevated); padding:0.75rem; border-radius:var(--radius-md); text-align:center;">
+              <div style="font-size:0.75rem; color:var(--text-dim);">BRANCH</div>
+              <div style="font-size:1.1rem; font-weight:600;" id="modal-stat-branch">main</div>
+            </div>
+            <div style="background:var(--bg-surface-elevated); padding:0.75rem; border-radius:var(--radius-md); text-align:center;">
+              <div style="font-size:0.75rem; color:var(--text-dim);">UPDATED</div>
+              <div style="font-size:0.9rem; font-weight:600;" id="modal-stat-updated">-</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; margin-top: 1.5rem;">
+            <a id="modal-demo-link" href="#" target="_blank" rel="noopener" class="btn-primary" style="display:none;">
+              Visit Live Demo &rarr;
+            </a>
+            <a id="modal-github-link" href="#" target="_blank" rel="noopener" class="btn-secondary">
+              Open on GitHub
+            </a>
+          </div>
+        </div>
+
+        <!-- Tab 2: README -->
+        <div id="tab-readme" class="tab-pane" style="display: none;">
+          <div id="modal-readme-content" class="markdown-body">
+            <p style="color:var(--text-muted);">Loading README documentation...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notifications Container -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container footer-content">
+      <div>
+        <span>Built with GitHub Pages & Public REST API.</span>
+      </div>
+      <div class="footer-links">
+        <a href="admin.html">Admin Site</a>
+        <span>&bull;</span>
+        <a href="https://github.com/ChingKheat" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/github-api.js"></script>
+  <script src="js/config-manager.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

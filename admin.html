@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal - GitHub Projects Dashboard</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- Authentication Gate Overlay -->
+  <div id="auth-overlay" style="position:fixed; inset:0; z-index:9999; background:var(--bg-base); display:flex; align-items:center; justify-content:center; padding:1.5rem;">
+    <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:2rem; width:100%; max-width:420px; box-shadow:var(--shadow-lg);">
+      <div style="text-align:center; margin-bottom:1.5rem;">
+        <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2" style="margin-bottom:0.75rem;">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+        </svg>
+        <h2 style="font-size:1.4rem; font-weight:700;">Admin Authentication</h2>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.35rem;">Enter your passcode to manage projects and settings</p>
+      </div>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label class="form-label" for="admin-pin-input">Passcode</label>
+          <input type="password" id="admin-pin-input" class="form-input" placeholder="Enter admin passcode" autofocus required>
+          <div class="form-hint">Default passcode: <code>admin123</code></div>
+        </div>
+        <button type="submit" class="btn-primary" style="width:100%; justify-content:center; padding:0.65rem;">
+          Unlock Admin Portal
+        </button>
+      </form>
+
+      <div style="text-align:center; margin-top:1.25rem;">
+        <a href="index.html" style="font-size:0.85rem; color:var(--text-muted); text-decoration:underline;">
+          &larr; Back to Public Showcase
+        </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Main Application -->
+  <div id="admin-app" style="display:none;">
+
+    <!-- Navigation -->
+    <nav class="navbar">
+      <div class="container nav-content">
+        <div class="nav-brand">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          <span>Admin Portal</span>
+        </div>
+        <div class="nav-actions">
+          <a href="index.html" class="btn-secondary" title="View Public Dashboard">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+              <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+            Public View
+          </a>
+          <button id="logout-btn" class="btn-secondary" style="color:var(--accent-danger);">
+            Logout
+          </button>
+        </div>
+      </div>
+    </nav>
+
+    <div class="container" style="padding-top:2rem; padding-bottom:3rem;">
+
+      <!-- Header & Stat Cards -->
+      <header class="admin-header">
+        <h1 style="font-size:1.75rem; font-weight:800;">Repository & Project Management</h1>
+        <p style="color:var(--text-muted); font-size:0.95rem; margin-top:0.3rem;">
+          Customize visibility, pin showcase highlights, add demo links, custom descriptions, and sync directly with GitHub.
+        </p>
+
+        <div class="admin-stats-grid">
+          <div class="admin-stat-card">
+            <span class="admin-stat-title">Total Repositories</span>
+            <span class="admin-stat-value" id="stat-admin-total">0</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-title">Pinned in Spotlight</span>
+            <span class="admin-stat-value" id="stat-admin-pinned" style="color:var(--accent-warning);">0</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-title">Hidden Repositories</span>
+            <span class="admin-stat-value" id="stat-admin-hidden" style="color:var(--accent-danger);">0</span>
+          </div>
+          <div class="admin-stat-card">
+            <span class="admin-stat-title">GitHub API Rate Limit</span>
+            <span class="admin-stat-value" id="stat-admin-ratelimit" style="color:var(--accent-primary); font-size:1.4rem;">60 / 60</span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Action Toolbar -->
+      <div class="admin-actions-bar">
+        <div style="display:flex; flex-wrap:wrap; gap:0.6rem;">
+          <button id="save-config-btn" class="btn-success">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+              <polyline points="17 21 17 13 7 13 7 21"></polyline>
+              <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            Save Changes
+          </button>
+          <button id="refresh-github-btn" class="btn-secondary" title="Fetch latest repos from GitHub REST API">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+            Refresh from GitHub
+          </button>
+          <button id="download-config-btn" class="btn-secondary" title="Download config file for your repository">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Download JSON
+          </button>
+        </div>
+
+        <div>
+          <button id="push-github-btn" class="btn-primary" title="Commit config directly to your GitHub repository using GitHub Cloud API">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
+            </svg>
+            Push to GitHub Cloud
+          </button>
+        </div>
+      </div>
+
+      <!-- Table Filter Bar -->
+      <div style="display:flex; flex-wrap:wrap; gap:0.75rem; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+        <div class="search-box" style="max-width:360px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="admin-search" placeholder="Filter repositories..." autocomplete="off">
+        </div>
+        <div>
+          <select id="admin-filter-status" class="select-control">
+            <option value="all">All Repositories</option>
+            <option value="pinned">Pinned in Spotlight</option>
+            <option value="visible">Visible</option>
+            <option value="hidden">Hidden</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Repositories Table -->
+      <div class="admin-table-container">
+        <table class="admin-table">
+          <thead>
+            <tr>
+              <th>Repository</th>
+              <th>Language</th>
+              <th>Visible</th>
+              <th>Pinned</th>
+              <th>Tags</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="projects-table-body">
+            <!-- Rendered dynamically by admin.js -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Settings & GitHub Credentials Section -->
+      <section style="margin-top:3rem; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:1.75rem;">
+        <h2 style="font-size:1.3rem; font-weight:700; margin-bottom:0.5rem;">Settings & GitHub Cloud Credentials</h2>
+        <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:1.5rem;">
+          Configure your portfolio identity and GitHub Cloud authentication credentials.
+        </p>
+
+        <div style="display:grid; grid-template-columns:1fr; gap:1.25rem;">
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+            <div class="form-group">
+              <label class="form-label" for="settings-username">Target GitHub Username</label>
+              <input type="text" id="settings-username" class="form-input" placeholder="e.g. ChingKheat">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="settings-pin">Admin Passcode</label>
+              <input type="text" id="settings-pin" class="form-input" placeholder="e.g. admin123">
+            </div>
+          </div>
+
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
+            <div class="form-group">
+              <label class="form-label" for="settings-title">Dashboard Title</label>
+              <input type="text" id="settings-title" class="form-input" placeholder="e.g. ChingKheat's Portfolio">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="settings-subtitle">Dashboard Subtitle</label>
+              <input type="text" id="settings-subtitle" class="form-input" placeholder="e.g. Software engineering projects">
+            </div>
+          </div>
+
+          <!-- GitHub Personal Access Token (PAT) -->
+          <div class="form-group">
+            <label class="form-label" for="github-pat-input">
+              GitHub Personal Access Token (PAT)
+              <span style="font-weight:normal; color:var(--text-dim); font-size:0.8rem;">(Optional - stored securely in browser only)</span>
+            </label>
+            <div style="display:flex; gap:0.5rem;">
+              <input type="password" id="github-pat-input" class="form-input" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" autocomplete="off">
+              <button id="toggle-token-visibility" type="button" class="btn-secondary" style="white-space:nowrap;">
+                Show / Hide
+              </button>
+            </div>
+            <div class="form-hint">
+              Adding a PAT increases your GitHub API rate limit from 60 to 5,000 requests/hour and enables 1-click cloud push.
+            </div>
+          </div>
+        </div>
+
+        <div style="margin-top:1rem;">
+          <button id="save-settings-btn" class="btn-primary">
+            Save Settings
+          </button>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- Edit Project Details Modal -->
+    <div id="project-edit-modal" class="modal-backdrop" role="dialog" aria-modal="true">
+      <div class="modal-container" style="max-width:650px;">
+        <div class="modal-header">
+          <div class="modal-title">
+            <span>Edit Project: <strong id="edit-repo-name-label">repo</strong></span>
+          </div>
+          <button id="edit-modal-close" class="modal-close">&times;</button>
+        </div>
+        <div class="modal-content" style="padding:1.5rem;">
+          <div class="form-group">
+            <label class="form-label" for="edit-title">Display Title</label>
+            <input type="text" id="edit-title" class="form-input" placeholder="Project Title">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-desc">Custom Description</label>
+            <textarea id="edit-desc" class="form-textarea" placeholder="Add an informative summary for this project..."></textarea>
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div class="form-group">
+              <label class="form-label" for="edit-badge">Custom Badge / Category</label>
+              <input type="text" id="edit-badge" class="form-input" placeholder="e.g. Mobile, AI, Web">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="edit-priority">Display Order / Priority</label>
+              <input type="number" id="edit-priority" class="form-input" placeholder="1" min="1" max="999">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-tags">Tags (comma-separated)</label>
+            <input type="text" id="edit-tags" class="form-input" placeholder="e.g. Flutter, Dart, Mobile, API">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-demo">Live Demo / Homepage URL</label>
+            <input type="url" id="edit-demo" class="form-input" placeholder="https://example.com/demo">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="edit-cover">Cover Screenshot / Image URL</label>
+            <input type="url" id="edit-cover" class="form-input" placeholder="https://images.unsplash.com/... or assets/cover.png">
+          </div>
+
+          <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">
+            <button id="cancel-edit-btn" class="btn-secondary">Cancel</button>
+            <button id="save-project-btn" class="btn-primary">Apply to Project</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toast Notifications -->
+    <div id="toast-container" class="toast-container"></div>
+
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/github-api.js"></script>
+  <script src="js/config-manager.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
