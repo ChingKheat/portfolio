@@ -128,6 +128,7 @@ const GitHubAPI = {
       if (cached) return cached;
     }
 
+    try {
       // If a token is provided, fetch both public and private repos using /user/repos
       const token = localStorage.getItem('gh_admin_pat');
       const apiUrl = token 
