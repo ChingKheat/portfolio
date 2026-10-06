@@ -81,16 +81,26 @@ const DemoViewer = {
         this.renderIframe(false);
       }
     } else {
+      const privateNotice = p.isPrivate
+        ? `<div style="display:inline-flex; align-items:center; gap:6px; background:rgba(255,123,114,0.15); color:#ff7b72; border:1px solid rgba(255,123,114,0.3); border-radius:999px; padding:4px 14px; font-size:0.82rem; font-weight:700; margin-bottom:1rem;">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+             Private Project (Personal Source Code)
+           </div>`
+        : '';
+
+      const ghBtnText = p.isPrivate ? 'Open Private Repo on GitHub (Requires Login) &rarr;' : 'View Repository on GitHub &rarr;';
+
       container.innerHTML = `
         <div class="no-demo-message">
-          <div style="font-size:3rem; margin-bottom:1rem;">🚀</div>
+          <div style="font-size:3rem; margin-bottom:0.75rem;">${p.isPrivate ? '🔒' : '🚀'}</div>
+          ${privateNotice}
           <h2 style="font-size:1.5rem; font-weight:700; margin-bottom:0.75rem;">${p.customTitle}</h2>
           <p style="color:var(--text-muted); line-height:1.6; margin-bottom:1.5rem;">
             ${p.customDescription}
           </p>
-          <div style="display:flex; justify-content:center; gap:0.75rem;">
+          <div style="display:flex; justify-content:center; gap:0.75rem; flex-wrap:wrap;">
             <a href="${p.htmlUrl}" target="_blank" rel="noopener" class="btn-primary">
-              View Repository on GitHub &rarr;
+              ${ghBtnText}
             </a>
             <a href="index.html" class="btn-secondary">
               &larr; Back to Projects

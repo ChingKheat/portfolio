@@ -68,6 +68,7 @@ const Admin = {
 
     document.getElementById('save-config-btn')?.addEventListener('click', () => this.saveChanges());
     document.getElementById('download-config-btn')?.addEventListener('click', () => this.downloadConfig());
+    document.getElementById('add-project-btn')?.addEventListener('click', () => this.promptAddProject());
     document.getElementById('refresh-github-btn')?.addEventListener('click', () => this.refreshGitHubData());
     document.getElementById('push-github-btn')?.addEventListener('click', () => this.pushToGitHubCloud());
 
@@ -114,10 +115,13 @@ const Admin = {
     const totalCount = this.mergedProjects.length;
     const demoCount = this.mergedProjects.filter(p => p.hasLiveDemo).length;
     const hiddenCount = this.mergedProjects.filter(p => !p.visible).length;
+    const privateCount = this.mergedProjects.filter(p => p.isPrivate).length;
 
     document.getElementById('stat-admin-total').textContent = totalCount;
     document.getElementById('stat-admin-pinned').textContent = demoCount;
     document.getElementById('stat-admin-hidden').textContent = hiddenCount;
+    const privEl = document.getElementById('stat-admin-private');
+    if (privEl) privEl.textContent = privateCount;
   },
 
   updateRateLimitDisplay() {
@@ -141,6 +145,7 @@ const Admin = {
       if (status === 'demos') matchStatus = p.hasLiveDemo === true;
       if (status === 'hidden') matchStatus = p.visible === false;
       if (status === 'visible') matchStatus = p.visible === true;
+      if (status === 'private') matchStatus = p.isPrivate === true;
 
       return matchSearch && matchStatus;
     });
@@ -166,7 +171,10 @@ const Admin = {
     tbody.innerHTML = this.filteredProjects.map(p => `
       <tr data-repo="${p.name}">
         <td>
-          <div style="font-weight: 600; color: var(--text-main);">${p.customTitle}</div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-weight: 600; color: var(--text-main);">${p.customTitle}</span>
+            ${p.isPrivate ? `<span style="font-size:0.7rem; padding:1px 6px; border-radius:999px; background:rgba(255,123,114,0.15); color:#ff7b72; border:1px solid rgba(255,123,114,0.3); font-weight:700;">🔒 Private</span>` : ''}
+          </div>
           <div style="font-size: 0.8rem; color: var(--text-dim); font-family: var(--font-mono);">${p.name}</div>
         </td>
         <td>
@@ -241,9 +249,35 @@ const Admin = {
     document.getElementById('edit-cover').value = project.coverImage || '';
     document.getElementById('edit-badge').value = project.badge || '';
     document.getElementById('edit-priority').value = project.priority || 10;
+    document.getElementById('edit-is-private').checked = Boolean(project.isPrivate);
 
     const modal = document.getElementById('project-edit-modal');
     modal.classList.add('active');
+  },
+
+  promptAddProject() {
+    const name = prompt('Enter the repository name (e.g. geo_heritage_personal):');
+    if (!name || !name.trim()) return;
+    const cleanName = name.trim();
+
+    if (!this.config.projects[cleanName]) {
+      this.config.projects[cleanName] = {
+        visible: true,
+        pinned: true,
+        priority: 3,
+        isPrivate: true,
+        customTitle: cleanName,
+        customDescription: 'Private project repository.',
+        tags: ['App'],
+        badge: '🔒 Private',
+        hasLiveDemo: false
+      };
+    }
+
+    this.mergedProjects = ConfigManager.mergeReposWithConfig(this.allRepos, this.config);
+    this.filterProjects();
+    this.updateStats();
+    this.openEditModal(cleanName);
   },
 
   closeEditModal() {
@@ -262,6 +296,12 @@ const Admin = {
     const tagsArray = rawTags.split(',').map(t => t.trim()).filter(Boolean);
     const demoUrl = document.getElementById('edit-demo').value.trim();
     const demoType = document.getElementById('edit-demo-type').value;
+    const isPrivate = document.getElementById('edit-is-private').checked;
+
+    let badge = document.getElementById('edit-badge').value.trim();
+    if (isPrivate && !badge) {
+      badge = '🔒 Private';
+    }
 
     this.config.projects[name].customTitle = document.getElementById('edit-title').value.trim();
     this.config.projects[name].customDescription = document.getElementById('edit-desc').value.trim();
@@ -269,8 +309,9 @@ const Admin = {
     this.config.projects[name].demoUrl = demoUrl;
     this.config.projects[name].demoType = demoType;
     this.config.projects[name].hasLiveDemo = Boolean(demoUrl);
+    this.config.projects[name].isPrivate = isPrivate;
     this.config.projects[name].coverImage = document.getElementById('edit-cover').value.trim();
-    this.config.projects[name].badge = document.getElementById('edit-badge').value.trim();
+    this.config.projects[name].badge = badge;
     this.config.projects[name].priority = parseInt(document.getElementById('edit-priority').value, 10) || 10;
 
     // Refresh merged array

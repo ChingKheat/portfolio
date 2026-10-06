@@ -10,26 +10,36 @@ const ConfigManager = {
    * Load base configuration from projects-config.json or localStorage overrides
    */
   async loadConfig() {
-    // 1. Check local storage overrides first
+    let fileConfig = null;
+    // 1. Fetch latest projects-config.json
+    try {
+      const res = await fetch('projects-config.json?v=' + Date.now());
+      if (res.ok) {
+        fileConfig = await res.json();
+      }
+    } catch (e) {
+      console.warn('Could not load projects-config.json from server:', e);
+    }
+
+    // 2. Check local storage overrides
     const custom = localStorage.getItem(this.storageKey);
     if (custom) {
       try {
-        this.activeConfig = JSON.parse(custom);
+        const parsed = JSON.parse(custom);
+        if (fileConfig && fileConfig.projects) {
+          // Merge projects so any newly declared project in the file is included
+          parsed.projects = { ...fileConfig.projects, ...parsed.projects };
+        }
+        this.activeConfig = parsed;
         return this.activeConfig;
       } catch (e) {
         console.warn('Failed parsing local custom config, falling back to file:', e);
       }
     }
 
-    // 2. Fetch projects-config.json from project root
-    try {
-      const res = await fetch('projects-config.json?v=' + Date.now());
-      if (res.ok) {
-        this.activeConfig = await res.json();
-        return this.activeConfig;
-      }
-    } catch (e) {
-      console.warn('Could not load projects-config.json from server:', e);
+    if (fileConfig) {
+      this.activeConfig = fileConfig;
+      return this.activeConfig;
     }
 
     // 3. Fallback default
@@ -96,6 +106,7 @@ const ConfigManager = {
         pushedAt: repo.pushed_at,
         defaultBranch: repo.default_branch || 'main',
         isFork: repo.fork,
+        isPrivate: custom.isPrivate !== undefined ? custom.isPrivate : Boolean(repo.private),
         license: repo.license ? repo.license.spdx_id || repo.license.name : null,
         sizeKb: repo.size || 0,
         topics: repo.topics || [],
@@ -112,7 +123,7 @@ const ConfigManager = {
         demoType: demoType,
         demoNote: custom.demoNote || '',
         coverImage: custom.coverImage || '',
-        badge: custom.badge || (hasLiveDemo ? 'Live Demo' : (isPinned ? 'Featured' : ''))
+        badge: custom.badge || (custom.isPrivate || repo.private ? '🔒 Private' : (hasLiveDemo ? 'Live Demo' : (isPinned ? 'Featured' : '')))
       };
     });
 
@@ -134,6 +145,7 @@ const ConfigManager = {
           updatedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
           defaultBranch: 'main',
+          isPrivate: custom.isPrivate !== undefined ? custom.isPrivate : false,
           visible: custom.visible !== undefined ? custom.visible : true,
           pinned: custom.pinned !== undefined ? custom.pinned : false,
           priority: custom.priority || 99,
@@ -145,7 +157,7 @@ const ConfigManager = {
           demoType: custom.demoType || 'desktop',
           demoNote: custom.demoNote || '',
           coverImage: custom.coverImage || '',
-          badge: custom.badge || ''
+          badge: custom.badge || (custom.isPrivate ? '🔒 Private' : '')
         });
       }
     });

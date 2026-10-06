@@ -190,6 +190,13 @@ const App = {
       ? `<span class="live-pill banner-live-indicator"><span class="pulse-dot"></span> Live Demo</span>`
       : '';
 
+    const privateIndicator = project.isPrivate
+      ? `<span class="banner-private-indicator" style="position:absolute; top:12px; left:12px; background:rgba(20,24,33,0.85); backdrop-filter:blur(6px); color:#ff7b72; border:1px solid rgba(255,123,114,0.4); font-size:0.75rem; padding:3px 9px; border-radius:999px; font-weight:700; display:inline-flex; align-items:center; gap:4px; z-index:2;">
+           <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+           Private
+         </span>`
+      : '';
+
     const badgeHTML = project.badge
       ? `<span class="banner-overlay-badge">${project.badge}</span>`
       : '';
@@ -212,10 +219,13 @@ const App = {
            View Overview
          </a>`;
 
+    const githubBtnText = project.isPrivate ? '🔒 Private Code' : 'GitHub Code';
+
     return `
       <div class="demo-card" data-repo="${project.name}">
-        <a href="${demoLink}" class="card-banner-wrapper" style="display:block;">
+        <a href="${demoLink}" class="card-banner-wrapper" style="display:block; position:relative;">
           ${coverHTML}
+          ${privateIndicator}
           ${liveIndicator}
           ${badgeHTML}
         </a>
@@ -229,8 +239,8 @@ const App = {
           <div class="tags-row">${tagsHTML}</div>
           <div class="card-footer-actions">
             ${primaryActionBtn}
-            <a href="${project.htmlUrl}" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none;">
-              GitHub Code
+            <a href="${project.htmlUrl}" target="_blank" rel="noopener" class="btn-secondary" style="text-decoration:none;" title="${project.isPrivate ? 'Private repository on GitHub' : 'Open repository on GitHub'}">
+              ${githubBtnText}
             </a>
           </div>
         </div>
@@ -241,7 +251,7 @@ const App = {
   applyFilters() {
     const searchVal = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
     const langVal = document.getElementById('language-filter')?.value || 'all';
-    const demoOnly = document.getElementById('demo-filter')?.value === 'demo_only';
+    const filterVal = document.getElementById('demo-filter')?.value || 'all';
 
     this.filteredProjects = this.allProjects.filter(p => {
       const matchSearch = !searchVal ||
@@ -251,9 +261,13 @@ const App = {
         (p.tags && p.tags.some(t => t.toLowerCase().includes(searchVal)));
 
       const matchLang = langVal === 'all' || p.language === langVal;
-      const matchDemo = !demoOnly || p.hasLiveDemo;
+      
+      let matchFilter = true;
+      if (filterVal === 'demo_only') matchFilter = p.hasLiveDemo === true;
+      if (filterVal === 'private_only') matchFilter = p.isPrivate === true;
+      if (filterVal === 'public_only') matchFilter = p.isPrivate !== true;
 
-      return matchSearch && matchLang && matchDemo;
+      return matchSearch && matchLang && matchFilter;
     });
 
     this.renderProjectsGrid();

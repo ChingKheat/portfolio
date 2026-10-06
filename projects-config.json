@@ -43,10 +43,25 @@
       "badge": "Flutter Web Demo",
       "demoNote": "Interactive Flutter Web application. Explore destinations and tap through the mobile UI."
     },
-    "nuxt-ai-chatbot": {
+    "geo_heritage_personal": {
       "visible": true,
       "pinned": true,
       "priority": 3,
+      "isPrivate": true,
+      "customTitle": "GeoHeritage (Personal Edition)",
+      "customDescription": "A cultural exploration and preservation mobile platform with interactive navigation, Geobot AI cultural guide, and gamified digital passport achievements.",
+      "tags": ["Flutter", "Dart", "Gemini AI", "Mobile App", "Google Maps"],
+      "demoUrl": "",
+      "demoType": "mobile",
+      "hasLiveDemo": false,
+      "coverImage": "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80",
+      "badge": "🔒 Private Project",
+      "demoNote": "Personal Flutter development edition with Geobot AI cultural guide and community rescue reports."
+    },
+    "nuxt-ai-chatbot": {
+      "visible": true,
+      "pinned": true,
+      "priority": 4,
       "customTitle": "Nuxt AI Conversational Assistant",
       "customDescription": "AI-powered conversational chatbot assistant built with Nuxt 3 and Vue featuring streaming answers and modern prompt responses.",
       "tags": ["Vue", "Nuxt.js", "AI Chatbot", "LLM", "Full Stack"],

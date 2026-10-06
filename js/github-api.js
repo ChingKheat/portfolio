@@ -128,9 +128,13 @@ const GitHubAPI = {
       if (cached) return cached;
     }
 
-    try {
-      // Fetch up to 100 repositories
-      const res = await fetch(`https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`, {
+      // If a token is provided, fetch both public and private repos using /user/repos
+      const token = localStorage.getItem('gh_admin_pat');
+      const apiUrl = token 
+        ? `https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator`
+        : `https://api.github.com/users/${encodeURIComponent(username)}/repos?per_page=100&sort=updated`;
+
+      const res = await fetch(apiUrl, {
         headers: this.getHeaders()
       });
       this.updateRateLimit(res);
