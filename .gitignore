@@ -9,5 +9,5 @@ Thumbs.db
 .idea/
 .system_generated/
 # Cloned projects
-geo_heritage/
-geo_heritage_personal/
+/geo_heritage/
+/geo_heritage_personal/

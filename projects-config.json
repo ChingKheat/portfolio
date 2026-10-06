@@ -71,12 +71,12 @@
         "Mobile App",
         "Google Maps"
       ],
-      "demoUrl": "",
+      "demoUrl": "demos/geo_heritage/index.html",
       "demoType": "mobile",
-      "hasLiveDemo": false,
+      "hasLiveDemo": true,
       "coverImage": "https://images.unsplash.com/photo-1569154941061-e231b4725ef1?auto=format&fit=crop&w=800&q=80",
-      "badge": "🔒 Private Project",
-      "demoNote": "Personal Flutter development edition with Geobot AI cultural guide and community rescue reports."
+      "badge": "🔒 Private (Live Demo)",
+      "demoNote": "Interactive mobile simulation featuring GPS heritage map, Geobot AI cultural guide, and passport stamps."
     },
     "geo_heritage": {
       "visible": true,
@@ -92,11 +92,11 @@
         "Google Maps",
         "Gemini AI"
       ],
-      "demoUrl": "",
+      "demoUrl": "demos/geo_heritage/index.html",
       "demoType": "mobile",
-      "hasLiveDemo": false,
+      "hasLiveDemo": true,
       "coverImage": "https://images.unsplash.com/photo-1548013146-72479768bada?auto=format&fit=crop&w=800&q=80",
-      "badge": "🔒 Assignment Project",
+      "badge": "🔒 Assignment (Live Demo)",
       "demoNote": "Original TAR UMT collaborative development project codebase."
     },
     "nuxt-ai-chatbot": {
