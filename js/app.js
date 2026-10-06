@@ -92,19 +92,30 @@ const App = {
   async loadData() {
     try {
       this.currentConfig = await ConfigManager.loadConfig();
-      const username = this.currentConfig.settings.githubUsername || 'ChingKheat';
+      const username = (this.currentConfig && this.currentConfig.settings && this.currentConfig.settings.githubUsername) || 'ChingKheat';
 
       // Update titles
-      document.getElementById('page-title').textContent = this.currentConfig.settings.dashboardTitle || `${username}'s Project Showcase`;
-      document.getElementById('nav-brand-title').textContent = `${username} | Project Showcase`;
+      const pageTitle = document.getElementById('page-title');
+      if (pageTitle) pageTitle.textContent = this.currentConfig.settings.dashboardTitle || `${username}'s Project Showcase`;
+      const brandTitle = document.getElementById('nav-brand-title');
+      if (brandTitle) brandTitle.textContent = `${username} | Project Showcase`;
 
-      // Fetch GitHub data
-      const [profile, ghRepos] = await Promise.all([
-        GitHubAPI.getUserProfile(username).catch(() => ({
-          login: username, name: username, bio: 'Developer & Creator', public_repos: 7
-        })),
-        GitHubAPI.getUserRepositories(username).catch(() => [])
-      ]);
+      // Fetch GitHub data with safe fallbacks
+      let profile = { login: username, name: username, bio: 'Full-Stack & Mobile Developer specializing in Flutter, Vue/Nuxt, and intelligent data-driven dashboards.', public_repos: 8 };
+      let ghRepos = [];
+
+      try {
+        if (typeof GitHubAPI !== 'undefined' && GitHubAPI.getUserProfile) {
+          const results = await Promise.all([
+            GitHubAPI.getUserProfile(username).catch(() => profile),
+            GitHubAPI.getUserRepositories(username).catch(() => [])
+          ]);
+          profile = results[0] || profile;
+          ghRepos = results[1] || [];
+        }
+      } catch (ghErr) {
+        console.warn('GitHub API fetch failed or rate limited; using local configuration:', ghErr);
+      }
 
       this.renderProfile(profile, username);
 
@@ -121,7 +132,18 @@ const App = {
 
     } catch (err) {
       console.error('Initialization error:', err);
-      this.showToast('Could not load repositories from GitHub API.', 'error');
+      // Fallback: render from config immediately so user is never blocked
+      if (this.currentConfig && this.currentConfig.projects) {
+        try {
+          const fallbackMerged = ConfigManager.mergeReposWithConfig([], this.currentConfig);
+          this.allProjects = fallbackMerged.filter(p => p.visible !== false);
+          this.filteredProjects = [...this.allProjects];
+          this.populateFilterOptions();
+          this.renderProjectsGrid();
+        } catch (e2) {
+          console.error('Fallback render error:', e2);
+        }
+      }
     }
   },
 
