@@ -1,0 +1,935 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AUREUS WEALTH | Executive Private Wealth Management</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Chart.js & Luxon for Precision Interactive Financial Charts -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <!-- Canvas Confetti -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.2/dist/confetti.browser.min.js"></script>
+  
+  <!-- High-End Editorial Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            obsidian: {
+              DEFAULT: '#0A0D14',
+              deep: '#06080D',
+              surface: '#111622',
+              card: '#161D2C',
+              hover: '#1D2536'
+            },
+            gold: {
+              DEFAULT: '#D4AF37',
+              light: '#F5E6B8',
+              dim: '#9E7E1D',
+              dark: '#73570C',
+              glow: 'rgba(212, 175, 55, 0.22)'
+            },
+            platinum: '#E5E9F0'
+          },
+          fontFamily: {
+            serif: ['"Cormorant Garamond"', 'Georgia', 'serif'],
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+            mono: ['"Space Grotesk"', 'monospace']
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    :root {
+      --color-gold: #D4AF37;
+      --color-gold-glow: rgba(212, 175, 55, 0.2);
+    }
+
+    body {
+      background-color: #06080D;
+      color: #E5E9F0;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+    }
+
+    /* Tabular numeric alignment */
+    .tabular-nums {
+      font-variant-numeric: tabular-nums lining-nums;
+    }
+
+    /* Executive Glassmorphism Cards */
+    .executive-card {
+      background: linear-gradient(135deg, rgba(22, 29, 44, 0.72) 0%, rgba(13, 17, 26, 0.88) 100%);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(212, 175, 55, 0.12);
+      transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .executive-card:hover {
+      border-color: rgba(212, 175, 55, 0.32);
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.75), 0 0 30px rgba(212, 175, 55, 0.08);
+    }
+
+    /* Gold Gradient Text */
+    .gold-gradient {
+      background: linear-gradient(135deg, #FFF1C5 0%, #D4AF37 55%, #9E7E1D 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Hairline borders */
+    .hairline-b {
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hairline-r {
+      border-right: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .hairline-t {
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    /* Custom Sleek Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #06080D;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #1C2333;
+      border-radius: 999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #D4AF37;
+    }
+
+    /* Modal Backdrop */
+    .modal-backdrop {
+      background: rgba(4, 6, 10, 0.85);
+      backdrop-filter: blur(12px);
+    }
+
+    /* Print styles for Audited Statement Export */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #000000 !important;
+      }
+      aside, header button, .no-print {
+        display: none !important;
+      }
+      .executive-card {
+        background: #ffffff !important;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+        color: #000000 !important;
+      }
+      .gold-gradient {
+        -webkit-text-fill-color: #000 !important;
+        color: #000 !important;
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen flex selection:bg-[#D4AF37] selection:text-black">
+
+  <!-- Sidebar Navigation -->
+  <aside class="w-64 hairline-r flex flex-col justify-between shrink-0 bg-obsidian-deep z-20 transition-all duration-300 hidden md:flex">
+    <div>
+      <!-- Brand Crest & Header -->
+      <div class="p-6 hairline-b flex items-center gap-3.5">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#D4AF37] to-[#806414] p-0.5 shadow-lg shadow-[#D4AF37]/20 flex items-center justify-center">
+          <div class="w-full h-full bg-obsidian rounded-[10px] flex items-center justify-center">
+            <span class="font-serif font-bold text-2xl text-[#D4AF37]">A</span>
+          </div>
+        </div>
+        <div>
+          <h1 class="font-serif text-xl font-bold tracking-wider gold-gradient">AUREUS</h1>
+          <p class="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-medium">Private Office &bull; Geneva</p>
+        </div>
+      </div>
+
+      <!-- Navigation Section -->
+      <div class="p-4 space-y-6">
+        <div>
+          <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 mb-2">Private Banking</p>
+          <nav class="space-y-1">
+            <button class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold bg-[#D4AF37]/12 text-[#D4AF37] border border-[#D4AF37]/25 shadow-sm shadow-[#D4AF37]/10 text-left">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              Master Dashboard
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition text-left">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path></svg>
+              Custody Vaults
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition text-left">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>
+              Capital Settlements
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition text-left">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+              Alpha Markets
+            </button>
+          </nav>
+        </div>
+
+        <div>
+          <p class="text-[10px] uppercase font-bold tracking-widest text-slate-400 px-3 mb-2">Family Office</p>
+          <nav class="space-y-1">
+            <button class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition text-left">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+              Advisory Board
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition text-left">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+              Tax & Sovereign Structuring
+            </button>
+            <button class="nav-btn w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-medium text-slate-400 hover:text-white hover:bg-white/5 transition text-left">
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+              Cold Storage Audit
+            </button>
+          </nav>
+        </div>
+      </div>
+    </div>
+
+    <!-- Client Executive Profile -->
+    <div class="p-4 hairline-t">
+      <div class="p-3 rounded-2xl bg-white/[0.02] border border-white/5 flex items-center gap-3">
+        <div class="relative">
+          <div class="w-10 h-10 rounded-full bg-gradient-to-tr from-slate-700 via-slate-600 to-slate-400 border border-[#D4AF37]/40 flex items-center justify-center font-bold text-xs text-white">
+            AD
+          </div>
+          <span class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-emerald-400 border-2 border-obsidian-deep"></span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <div class="text-xs font-semibold text-white truncate">Lord A. Dubois</div>
+          <div class="text-[10px] text-gold truncate flex items-center gap-1">
+            <span>UHNW Principal</span>
+            <span>&bull; Tier I</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Viewport Content -->
+  <main class="flex-1 min-w-0 flex flex-col h-screen overflow-y-auto">
+    
+    <!-- Top Header Bar -->
+    <header class="p-6 md:px-8 hairline-b flex flex-wrap items-center justify-between gap-4 shrink-0 bg-obsidian-deep/80 backdrop-blur-xl sticky top-0 z-10">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-[11px] uppercase tracking-widest text-slate-400 font-semibold">SWIFT RTGS Node Active &bull; Zurich Gateway</span>
+        </div>
+        <h2 class="font-serif text-2xl md:text-3xl font-semibold text-white tracking-wide">Executive Wealth Portfolio</h2>
+      </div>
+
+      <!-- Controls & Multi-Currency Switcher -->
+      <div class="flex items-center flex-wrap gap-3">
+        
+        <!-- Live Currency Switcher -->
+        <div class="flex items-center bg-obsidian-card border border-white/10 rounded-xl p-1 text-xs">
+          <button onclick="setCurrency('USD')" id="btn-curr-USD" class="curr-btn px-3 py-1.5 rounded-lg bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/30 transition">USD ($)</button>
+          <button onclick="setCurrency('CHF')" id="btn-curr-CHF" class="curr-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">CHF (Fr.)</button>
+          <button onclick="setCurrency('EUR')" id="btn-curr-EUR" class="curr-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">EUR (€)</button>
+          <button onclick="setCurrency('GBP')" id="btn-curr-GBP" class="curr-btn px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition">GBP (£)</button>
+        </div>
+
+        <!-- Wire Transfer Trigger Button -->
+        <button onclick="openWireModal()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#A37B15] text-black text-xs font-bold tracking-wider uppercase hover:brightness-110 shadow-lg shadow-[#D4AF37]/25 transition flex items-center gap-2">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Schedule Wire</span>
+        </button>
+
+        <!-- Statement Print Export -->
+        <button onclick="window.print()" class="p-2 rounded-xl bg-obsidian-card border border-white/10 text-slate-300 hover:text-white hover:border-[#D4AF37]/40 transition" title="Export Statement to PDF">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Dashboard Workspace -->
+    <div class="p-6 md:p-8 space-y-7 flex-1">
+      
+      <!-- 4 High-Precision Metric Cards -->
+      <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        
+        <!-- Total Net Worth -->
+        <div class="executive-card rounded-2xl p-5 relative overflow-hidden group">
+          <div class="flex justify-between items-start mb-3">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Consolidated Net Worth</span>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 tabular-nums">+14.8% YoY</span>
+          </div>
+          <div class="font-serif text-3xl font-bold text-white tracking-tight tabular-nums mb-2" id="val-net-worth">
+            $28,450,120
+          </div>
+          <div class="flex items-center justify-between pt-2 hairline-t text-[11px]">
+            <span class="text-slate-400">Unrealized Capital Gains:</span>
+            <span class="text-emerald-400 font-bold tabular-nums" id="val-unrealized">+$3,240,000</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </div>
+
+        <!-- Managed Discretionary Portfolio -->
+        <div class="executive-card rounded-2xl p-5 relative overflow-hidden group">
+          <div class="flex justify-between items-start mb-3">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Discretionary Mandate</span>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30 tabular-nums">Active Alpha</span>
+          </div>
+          <div class="font-serif text-3xl font-bold text-white tracking-tight tabular-nums mb-2" id="val-portfolio">
+            $19,235,680
+          </div>
+          <div class="flex items-center justify-between pt-2 hairline-t text-[11px]">
+            <span class="text-slate-400">Custodian: Pictet Geneva</span>
+            <span class="text-[#D4AF37] font-semibold">Tier 1 AAA</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-[#D4AF37] to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </div>
+
+        <!-- YTD Performance Yield -->
+        <div class="executive-card rounded-2xl p-5 relative overflow-hidden group">
+          <div class="flex justify-between items-start mb-3">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">YTD Alpha Return</span>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 tabular-nums">+6.2% Net</span>
+          </div>
+          <div class="font-serif text-3xl font-bold text-emerald-400 tracking-tight tabular-nums mb-2" id="val-ytd-alpha">
+            +$1,192,400
+          </div>
+          <div class="flex items-center justify-between pt-2 hairline-t text-[11px]">
+            <span class="text-slate-400">Benchmark (MSCI World):</span>
+            <span class="text-slate-300 font-semibold tabular-nums">+4.1%</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-emerald-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </div>
+
+        <!-- Cash & Treasury Reserves -->
+        <div class="executive-card rounded-2xl p-5 relative overflow-hidden group">
+          <div class="flex justify-between items-start mb-3">
+            <span class="text-xs font-medium text-slate-400 uppercase tracking-wider">Liquid Cash & Bills</span>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/25 tabular-nums">5.15% APY</span>
+          </div>
+          <div class="font-serif text-3xl font-bold text-white tracking-tight tabular-nums mb-2" id="val-cash">
+            $2,100,500
+          </div>
+          <div class="flex items-center justify-between pt-2 hairline-t text-[11px]">
+            <span class="text-slate-400">Short-Term US Treasuries</span>
+            <span class="text-blue-400 font-semibold tabular-nums" id="val-bills">$1,850,000</span>
+          </div>
+          <div class="absolute bottom-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+        </div>
+
+      </section>
+
+      <!-- Center Analytics Row: Interactive Donut & Growth Curve -->
+      <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Interactive Asset Allocation Donut (5 Cols) -->
+        <div class="lg:col-span-5 executive-card rounded-2xl p-6 flex flex-col justify-between">
+          <div class="flex items-center justify-between mb-4">
+            <div>
+              <h3 class="font-serif text-xl font-bold text-white tracking-wide">Strategic Asset Allocation</h3>
+              <p class="text-xs text-slate-400">Multi-asset sovereign risk parity</p>
+            </div>
+            <span class="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/30 uppercase tracking-wider">Mandate 80/20</span>
+          </div>
+
+          <!-- Chart.js Donut Canvas Container -->
+          <div class="relative flex items-center justify-center my-3 h-56">
+            <canvas id="assetDonutChart"></canvas>
+            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none text-center">
+              <span class="text-[10px] uppercase tracking-widest text-slate-400 font-semibold" id="donut-center-label">Total Allocated</span>
+              <span class="font-serif text-2xl font-bold text-white tabular-nums" id="donut-center-value">$28.45M</span>
+              <span class="text-[11px] text-emerald-400 font-semibold" id="donut-center-sub">100% Deployed</span>
+            </div>
+          </div>
+
+          <!-- Dynamic Legend Badges -->
+          <div class="grid grid-cols-2 gap-2.5 pt-4 hairline-t text-xs">
+            <div class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer" onclick="filterByAsset('Equities')">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#D4AF37]"></span>
+              <span class="text-slate-400">Equities (45%)</span>
+              <span class="ml-auto font-semibold text-white tabular-nums" id="leg-equities">$12.8M</span>
+            </div>
+            <div class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer" onclick="filterByAsset('Fixed Income')">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#60A5FA]"></span>
+              <span class="text-slate-400">Bonds (25%)</span>
+              <span class="ml-auto font-semibold text-white tabular-nums" id="leg-bonds">$7.1M</span>
+            </div>
+            <div class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer" onclick="filterByAsset('Real Estate')">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#34D399]"></span>
+              <span class="text-slate-400">Real Estate (15%)</span>
+              <span class="ml-auto font-semibold text-white tabular-nums" id="leg-re">$4.2M</span>
+            </div>
+            <div class="flex items-center gap-2 p-1.5 rounded-lg hover:bg-white/5 transition cursor-pointer" onclick="filterByAsset('Private Equity')">
+              <span class="w-2.5 h-2.5 rounded-full bg-[#C084FC]"></span>
+              <span class="text-slate-400">Alternatives (10%)</span>
+              <span class="ml-auto font-semibold text-white tabular-nums" id="leg-pe">$2.8M</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Portfolio Growth Trajectory & Yield Curve (7 Cols) -->
+        <div class="lg:col-span-7 executive-card rounded-2xl p-6 flex flex-col justify-between">
+          <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h3 class="font-serif text-xl font-bold text-white tracking-wide">Portfolio Growth & Yield Curve</h3>
+              <p class="text-xs text-slate-400">Cumulative appreciation vs. Private Wealth Benchmark</p>
+            </div>
+            
+            <!-- Timeframe Filter Buttons -->
+            <div class="flex items-center bg-black/40 border border-white/10 rounded-xl p-1 text-xs">
+              <button onclick="updateTimeframe('1M')" id="tf-1M" class="tf-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">1M</button>
+              <button onclick="updateTimeframe('6M')" id="tf-6M" class="tf-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">6M</button>
+              <button onclick="updateTimeframe('1Y')" id="tf-1Y" class="tf-btn px-2.5 py-1 rounded-lg bg-[#D4AF37]/20 text-[#D4AF37] font-bold border border-[#D4AF37]/30 transition">1Y</button>
+              <button onclick="updateTimeframe('ALL')" id="tf-ALL" class="tf-btn px-2.5 py-1 rounded-lg text-slate-400 hover:text-white transition">ALL</button>
+            </div>
+          </div>
+
+          <!-- Chart.js Spline Curve Canvas Container -->
+          <div class="h-64 relative w-full">
+            <canvas id="growthChart"></canvas>
+          </div>
+
+          <!-- Chart Summary Footer -->
+          <div class="flex items-center justify-between pt-3 hairline-t text-xs text-slate-400">
+            <div class="flex items-center gap-4">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-[#D4AF37]"></span> Aureus Portfolio</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-0.5 bg-slate-500 border-dashed border-b border-white"></span> MSCI Benchmark</span>
+            </div>
+            <div class="text-[#D4AF37] font-semibold tabular-nums">All-Time High: <span id="lbl-ath">$28,450,120</span></div>
+          </div>
+        </div>
+
+      </section>
+
+      <!-- Institutional Transactions & Settlement Ledger -->
+      <section class="executive-card rounded-2xl p-6">
+        <div class="flex flex-wrap items-center justify-between gap-4 mb-5">
+          <div>
+            <h3 class="font-serif text-xl font-bold text-white tracking-wide">Private Wealth Transactions</h3>
+            <p class="text-xs text-slate-400">Audited settlement ledger, dividends, and institutional capital calls</p>
+          </div>
+
+          <!-- Search Filter & Status Controls -->
+          <div class="flex items-center gap-3">
+            <div class="relative">
+              <input type="text" id="tx-search" oninput="filterTransactions()" placeholder="Filter counterparty or asset..." class="bg-obsidian-deep border border-white/10 rounded-xl px-3.5 py-1.5 pl-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#D4AF37]/50 w-56">
+              <svg class="w-3.5 h-3.5 text-slate-500 absolute left-2.5 top-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+            </div>
+
+            <select id="tx-status-filter" onchange="filterTransactions()" class="bg-obsidian-deep border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-[#D4AF37]/50">
+              <option value="ALL">All Statuses</option>
+              <option value="SETTLED">Settled</option>
+              <option value="ESCROW">In Escrow</option>
+              <option value="CREDITED">Credited</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Transactions Table -->
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-xs">
+            <thead>
+              <tr class="hairline-b text-slate-400 uppercase tracking-wider text-[11px]">
+                <th class="pb-3.5 font-semibold">Settlement Date</th>
+                <th class="pb-3.5 font-semibold">Asset Class</th>
+                <th class="pb-3.5 font-semibold">Security / Counterparty</th>
+                <th class="pb-3.5 font-semibold text-right">Nominal Amount</th>
+                <th class="pb-3.5 font-semibold text-center">Settlement Status</th>
+              </tr>
+            </thead>
+            <tbody id="tx-tbody" class="divide-y divide-white/5 font-sans">
+              <!-- Dynamically Populated by JavaScript -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- Interactive Wire Transfer Modal -->
+  <div id="wire-modal" class="fixed inset-0 modal-backdrop z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-200">
+    <div class="executive-card rounded-2xl max-w-lg w-full p-6 space-y-5 border border-[#D4AF37]/40 shadow-2xl relative">
+      
+      <div class="flex items-center justify-between hairline-b pb-4">
+        <div class="flex items-center gap-3">
+          <div class="w-8 h-8 rounded-lg bg-[#D4AF37]/20 flex items-center justify-center text-[#D4AF37]">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          </div>
+          <div>
+            <h3 class="font-serif text-lg font-bold text-white">Execute Institutional Wire</h3>
+            <p class="text-[11px] text-slate-400">High-Value RTGS Institutional Transfer</p>
+          </div>
+        </div>
+        <button onclick="closeWireModal()" class="text-slate-400 hover:text-white transition">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <form id="wire-form" onsubmit="handleWireSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Recipient Banking Institution</label>
+          <select id="wire-bank" class="w-full bg-obsidian-deep border border-white/10 rounded-xl px-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#D4AF37] transition">
+            <option value="UBS Switzerland AG, Zurich (CH93 0023 0230 4592 1100)">UBS Switzerland AG, Zurich (CH93 0023 0230 4592 1100)</option>
+            <option value="Banque Pictet & Cie, Geneva (CH44 0843 0000 1284 9012)">Banque Pictet & Cie, Geneva (CH44 0843 0000 1284 9012)</option>
+            <option value="J.P. Morgan Private Bank, London (GB29 NWBK 6016 1331 9268)">J.P. Morgan Private Bank, London (GB29 NWBK 6016 1331 9268)</option>
+            <option value="DBS Private Bank, Singapore (SG12 DBSS 0039 1234 5678)">DBS Private Bank, Singapore (SG12 DBSS 0039 1234 5678)</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Beneficiary Account Name</label>
+          <input type="text" id="wire-beneficiary" required value="Dubois Family Trust Global HoldCo Ltd." class="w-full bg-obsidian-deep border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37] transition">
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Settlement Currency</label>
+            <select id="wire-currency" class="w-full bg-obsidian-deep border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]">
+              <option value="USD">USD ($)</option>
+              <option value="CHF">CHF (Fr.)</option>
+              <option value="EUR">EUR (€)</option>
+              <option value="GBP">GBP (£)</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Nominal Transfer Amount</label>
+            <input type="number" id="wire-amount" required min="10000" step="5000" value="500000" class="w-full bg-obsidian-deep border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white tabular-nums focus:outline-none focus:border-[#D4AF37]">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1.5">Institutional Purpose / Memo</label>
+          <input type="text" id="wire-memo" required value="Q4 Co-Investment Capital Allocation tranche" class="w-full bg-obsidian-deep border border-white/10 rounded-xl px-3.5 py-2 text-xs text-white focus:outline-none focus:border-[#D4AF37]">
+        </div>
+
+        <div class="p-3 rounded-xl bg-[#D4AF37]/10 border border-[#D4AF37]/30 text-[11px] text-[#D4AF37] flex items-center gap-2">
+          <svg class="w-4 h-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+          <span>Secured by Multi-Sig Hardware Security Module. Zero Counterparty Exposure.</span>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 pt-3 hairline-t">
+          <button type="button" onclick="closeWireModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-400 hover:text-white transition">Cancel</button>
+          <button type="submit" class="px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#D4AF37] to-[#8C6813] text-black text-xs font-bold uppercase tracking-wider hover:brightness-110 shadow-lg shadow-[#D4AF37]/30 transition">
+            Authorize & Execute Wire
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Client-Side State & Logic Engine -->
+  <script>
+    // Exchange rates normalized against USD base
+    const RATES = {
+      USD: { rate: 1.00, symbol: '$', prefix: true },
+      CHF: { rate: 0.88, symbol: ' Fr.', prefix: false },
+      EUR: { rate: 0.92, symbol: '€', prefix: true },
+      GBP: { rate: 0.77, symbol: '£', prefix: true }
+    };
+
+    let currentCurrency = 'USD';
+
+    // Base figures in USD
+    const BASE_METRICS = {
+      netWorth: 28450120,
+      portfolio: 19235680,
+      unrealized: 3240000,
+      ytdAlpha: 1192400,
+      cash: 2100500,
+      bills: 1850000,
+      ath: 28450120,
+      equities: 12800000,
+      bonds: 7100000,
+      realEstate: 4200000,
+      privateEquity: 2800000
+    };
+
+    // Transaction Ledger Data
+    let transactions = [
+      {
+        id: 1,
+        date: '06.10.2026',
+        assetClass: 'Private Equity LP',
+        counterparty: 'Blackstone Real Estate Partners X (Capital Call)',
+        amount: 250000,
+        status: 'SETTLED'
+      },
+      {
+        id: 2,
+        date: '03.10.2026',
+        assetClass: 'Swiss Sovereign',
+        counterparty: 'Swiss Confederation 2.50% Bond 2034',
+        amount: 1500000,
+        status: 'SETTLED'
+      },
+      {
+        id: 3,
+        date: '28.09.2026',
+        assetClass: 'Pre-IPO Tech',
+        counterparty: 'Anthropic Series E Secondary Liquidity Vault',
+        amount: 750000,
+        status: 'ESCROW'
+      },
+      {
+        id: 4,
+        date: '22.09.2026',
+        assetClass: 'Dividend Credit',
+        counterparty: 'Hermès International S.A. (RMS) Annual Dividend',
+        amount: 64280,
+        status: 'CREDITED',
+        isCredit: true
+      },
+      {
+        id: 5,
+        date: '15.09.2026',
+        assetClass: 'Alternative Real Estate',
+        counterparty: 'Geneva Prime Lakefront Residential Trust III',
+        amount: 2100000,
+        status: 'SETTLED'
+      }
+    ];
+
+    // Format Currency Helper
+    function formatCurrency(amountUSD, currency = currentCurrency) {
+      const cfg = RATES[currency];
+      const converted = amountUSD * cfg.rate;
+      const formattedNumber = Math.round(converted).toLocaleString('en-US');
+      return cfg.prefix ? `${cfg.symbol}${formattedNumber}` : `${formattedNumber}${cfg.symbol}`;
+    }
+
+    // Set Active Currency & Recalculate
+    function setCurrency(curr) {
+      currentCurrency = curr;
+      document.querySelectorAll('.curr-btn').forEach(btn => {
+        btn.classList.remove('bg-[#D4AF37]/20', 'text-[#D4AF37]', 'font-bold', 'border', 'border-[#D4AF37]/30');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeBtn = document.getElementById(`btn-curr-${curr}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('bg-[#D4AF37]/20', 'text-[#D4AF37]', 'font-bold', 'border', 'border-[#D4AF37]/30');
+      }
+
+      // Update KPI figures
+      document.getElementById('val-net-worth').textContent = formatCurrency(BASE_METRICS.netWorth);
+      document.getElementById('val-unrealized').textContent = '+' + formatCurrency(BASE_METRICS.unrealized);
+      document.getElementById('val-portfolio').textContent = formatCurrency(BASE_METRICS.portfolio);
+      document.getElementById('val-ytd-alpha').textContent = '+' + formatCurrency(BASE_METRICS.ytdAlpha);
+      document.getElementById('val-cash').textContent = formatCurrency(BASE_METRICS.cash);
+      document.getElementById('val-bills').textContent = formatCurrency(BASE_METRICS.bills);
+      document.getElementById('lbl-ath').textContent = formatCurrency(BASE_METRICS.ath);
+
+      // Update Legend Figures
+      document.getElementById('leg-equities').textContent = formatCurrency(BASE_METRICS.equities);
+      document.getElementById('leg-bonds').textContent = formatCurrency(BASE_METRICS.bonds);
+      document.getElementById('leg-re').textContent = formatCurrency(BASE_METRICS.realEstate);
+      document.getElementById('leg-pe').textContent = formatCurrency(BASE_METRICS.privateEquity);
+
+      const millions = (BASE_METRICS.netWorth * RATES[curr].rate / 1000000).toFixed(2);
+      document.getElementById('donut-center-value').textContent = RATES[curr].prefix 
+        ? `${RATES[curr].symbol}${millions}M` 
+        : `${millions}M${RATES[curr].symbol}`;
+
+      // Refresh table & charts
+      renderTransactions();
+      updateCharts();
+    }
+
+    // Render Transaction Rows
+    function renderTransactions(filteredList = transactions) {
+      const tbody = document.getElementById('tx-tbody');
+      if (!tbody) return;
+
+      if (filteredList.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-8 text-center text-slate-500">
+              No matching transactions found in audited ledger.
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filteredList.map(tx => {
+        let statusBadge = '';
+        if (tx.status === 'SETTLED') {
+          statusBadge = `<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/25">SETTLED</span>`;
+        } else if (tx.status === 'ESCROW') {
+          statusBadge = `<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#D4AF37]/15 text-[#D4AF37] border border-[#D4AF37]/35 shadow-sm shadow-[#D4AF37]/10">ESCROW</span>`;
+        } else if (tx.status === 'CREDITED') {
+          statusBadge = `<span class="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-400 border border-blue-500/25">CREDITED</span>`;
+        }
+
+        const amountColor = tx.isCredit ? 'text-emerald-400' : 'text-white';
+        const prefix = tx.isCredit ? '+' : '';
+
+        return `
+          <tr class="hover:bg-white/[0.02] transition">
+            <td class="py-3.5 font-medium tabular-nums text-slate-300">${tx.date}</td>
+            <td class="py-3.5 text-slate-400">${tx.assetClass}</td>
+            <td class="py-3.5 font-semibold text-white">${tx.counterparty}</td>
+            <td class="py-3.5 text-right font-bold tabular-nums ${amountColor}">${prefix}${formatCurrency(tx.amount)}</td>
+            <td class="py-3.5 text-center">${statusBadge}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // Filter Transactions
+    function filterTransactions() {
+      const query = document.getElementById('tx-search').value.toLowerCase().trim();
+      const statusFilter = document.getElementById('tx-status-filter').value;
+
+      const filtered = transactions.filter(tx => {
+        const matchesQuery = tx.counterparty.toLowerCase().includes(query) || tx.assetClass.toLowerCase().includes(query);
+        const matchesStatus = (statusFilter === 'ALL') || (tx.status === statusFilter);
+        return matchesQuery && matchesStatus;
+      });
+
+      renderTransactions(filtered);
+    }
+
+    // Donut chart filter helper
+    function filterByAsset(assetKeyword) {
+      document.getElementById('tx-search').value = assetKeyword;
+      filterTransactions();
+    }
+
+    // Wire Modal Controls
+    function openWireModal() {
+      const modal = document.getElementById('wire-modal');
+      modal.classList.remove('hidden');
+      setTimeout(() => modal.classList.remove('opacity-0'), 10);
+    }
+
+    function closeWireModal() {
+      const modal = document.getElementById('wire-modal');
+      modal.classList.add('opacity-0');
+      setTimeout(() => modal.classList.add('hidden'), 200);
+    }
+
+    function handleWireSubmit(e) {
+      e.preventDefault();
+      const bank = document.getElementById('wire-bank').value;
+      const beneficiary = document.getElementById('wire-beneficiary').value;
+      const amount = parseFloat(document.getElementById('wire-amount').value);
+      const currency = document.getElementById('wire-currency').value;
+      const memo = document.getElementById('wire-memo').value;
+
+      // Convert to base USD for ledger
+      const usdAmount = amount / RATES[currency].rate;
+
+      // Add to top of transactions
+      const newTx = {
+        id: Date.now(),
+        date: new Date().toLocaleDateString('en-GB').replace(/\//g, '.'),
+        assetClass: 'Direct Wire',
+        counterparty: `${beneficiary} (${bank.split(',')[0]})`,
+        amount: usdAmount,
+        status: 'ESCROW'
+      };
+
+      transactions.unshift(newTx);
+      renderTransactions();
+      closeWireModal();
+
+      // Confetti celebration
+      confetti({
+        particleCount: 75,
+        spread: 60,
+        origin: { y: 0.6 },
+        colors: ['#D4AF37', '#FFF1C5', '#60A5FA']
+      });
+
+      alert(`✅ Wire transfer of ${amount.toLocaleString()} ${currency} authorized and broadcast to SWIFT network. Placed in Escrow status.`);
+    }
+
+    // --- Chart.js Financial Chart Implementations ---
+    let donutChart = null;
+    let growthChart = null;
+
+    function initCharts() {
+      // 1. Asset Allocation Donut Chart
+      const ctxDonut = document.getElementById('assetDonutChart').getContext('2d');
+      donutChart = new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+          labels: ['Equities', 'Fixed Income', 'Real Estate', 'Private Equity', 'Liquid Cash'],
+          datasets: [{
+            data: [45, 25, 15, 10, 5],
+            backgroundColor: [
+              '#D4AF37', // Gold
+              '#60A5FA', // Blue
+              '#34D399', // Emerald
+              '#C084FC', // Purple
+              '#94A3B8'  // Platinum Gray
+            ],
+            borderWidth: 0,
+            hoverOffset: 8
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          cutout: '76%',
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0A0D14',
+              borderColor: 'rgba(212,175,55,0.4)',
+              borderWidth: 1,
+              titleFont: { family: 'Plus Jakarta Sans', weight: 'bold' },
+              bodyFont: { family: 'Plus Jakarta Sans' },
+              callbacks: {
+                label: function(ctx) {
+                  const pct = ctx.parsed;
+                  const total = BASE_METRICS.netWorth * RATES[currentCurrency].rate;
+                  const val = (total * pct / 100);
+                  return ` ${ctx.label}: ${pct}% (${formatCurrency(val / RATES[currentCurrency].rate)})`;
+                }
+              }
+            }
+          }
+        }
+      });
+
+      // 2. Portfolio Growth Spline Chart
+      const ctxGrowth = document.getElementById('growthChart').getContext('2d');
+      const gradient = ctxGrowth.createLinearGradient(0, 0, 0, 240);
+      gradient.addColorStop(0, 'rgba(212, 175, 55, 0.32)');
+      gradient.addColorStop(1, 'rgba(212, 175, 55, 0.0)');
+
+      growthChart = new Chart(ctxGrowth, {
+        type: 'line',
+        data: {
+          labels: ['Nov 2025', 'Jan 2026', 'Mar 2026', 'May 2026', 'Jul 2026', 'Sep 2026', 'Oct 2026'],
+          datasets: [
+            {
+              label: 'Aureus Portfolio',
+              data: [23.8, 24.5, 25.2, 26.1, 27.0, 28.1, 28.45],
+              borderColor: '#D4AF37',
+              borderWidth: 3,
+              backgroundColor: gradient,
+              fill: true,
+              tension: 0.4,
+              pointBackgroundColor: '#D4AF37',
+              pointBorderColor: '#0A0D14',
+              pointBorderWidth: 2,
+              pointRadius: 4,
+              pointHoverRadius: 7
+            },
+            {
+              label: 'MSCI Benchmark',
+              data: [23.5, 23.9, 24.2, 24.8, 25.3, 25.8, 26.2],
+              borderColor: 'rgba(148, 163, 184, 0.45)',
+              borderWidth: 1.5,
+              borderDash: [5, 5],
+              fill: false,
+              tension: 0.4,
+              pointRadius: 0
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#0A0D14',
+              borderColor: 'rgba(212,175,55,0.4)',
+              borderWidth: 1,
+              titleFont: { family: 'Plus Jakarta Sans', weight: 'bold' },
+              bodyFont: { family: 'Plus Jakarta Sans' },
+              callbacks: {
+                label: function(ctx) {
+                  return ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}M`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: {
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: { color: '#8A92A6', font: { family: 'Plus Jakarta Sans', size: 10 } }
+            },
+            y: {
+              grid: { color: 'rgba(255,255,255,0.04)' },
+              ticks: {
+                color: '#8A92A6',
+                font: { family: 'Plus Jakarta Sans', size: 10 },
+                callback: (v) => `$${v}M`
+              }
+            }
+          }
+        }
+      });
+    }
+
+    // Timeframe switcher
+    function updateTimeframe(tf) {
+      document.querySelectorAll('.tf-btn').forEach(btn => {
+        btn.classList.remove('bg-[#D4AF37]/20', 'text-[#D4AF37]', 'font-bold', 'border', 'border-[#D4AF37]/30');
+        btn.classList.add('text-slate-400');
+      });
+
+      const activeBtn = document.getElementById(`tf-${tf}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('text-slate-400');
+        activeBtn.classList.add('bg-[#D4AF37]/20', 'text-[#D4AF37]', 'font-bold', 'border', 'border-[#D4AF37]/30');
+      }
+
+      if (tf === '1M') {
+        growthChart.data.labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+        growthChart.data.datasets[0].data = [28.05, 28.18, 28.32, 28.45];
+        growthChart.data.datasets[1].data = [27.90, 27.95, 28.02, 28.10];
+      } else if (tf === '6M') {
+        growthChart.data.labels = ['May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
+        growthChart.data.datasets[0].data = [26.1, 26.5, 27.0, 27.6, 28.1, 28.45];
+        growthChart.data.datasets[1].data = [24.8, 25.0, 25.3, 25.6, 25.9, 26.2];
+      } else if (tf === '1Y') {
+        growthChart.data.labels = ['Nov 2025', 'Jan 2026', 'Mar 2026', 'May 2026', 'Jul 2026', 'Sep 2026', 'Oct 2026'];
+        growthChart.data.datasets[0].data = [23.8, 24.5, 25.2, 26.1, 27.0, 28.1, 28.45];
+        growthChart.data.datasets[1].data = [23.5, 23.9, 24.2, 24.8, 25.3, 25.8, 26.2];
+      } else if (tf === 'ALL') {
+        growthChart.data.labels = ['2022', '2023', '2024', '2025', '2026'];
+        growthChart.data.datasets[0].data = [18.2, 20.4, 22.8, 25.1, 28.45];
+        growthChart.data.datasets[1].data = [17.5, 18.9, 20.7, 22.6, 24.8];
+      }
+      growthChart.update();
+    }
+
+    function updateCharts() {
+      if (donutChart) donutChart.update();
+      if (growthChart) growthChart.update();
+    }
+
+    // Initialize application on DOM ready
+    window.addEventListener('DOMContentLoaded', () => {
+      renderTransactions();
+      initCharts();
+    });
+  </script>
+</body>
+</html>

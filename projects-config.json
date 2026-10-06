@@ -15,6 +15,27 @@
     "defaultActiveDemo": "banana-dashboard"
   },
   "projects": {
+    "aureus-wealth": {
+      "visible": true,
+      "pinned": true,
+      "priority": 1,
+      "customTitle": "Aureus Wealth | Executive Private Office",
+      "customDescription": "Ultra-luxury private wealth management platform featuring obsidian dark mode, champagne gold telemetry, interactive multi-currency asset allocation, and institutional settlement ledgers.",
+      "tags": [
+        "FinTech",
+        "Tailwind CSS",
+        "Chart.js",
+        "UI/UX Design",
+        "Wealth Management"
+      ],
+      "demoUrl": "demos/aureus-wealth/index.html",
+      "demoType": "desktop",
+      "hasLiveDemo": true,
+      "coverImage": "assets/luxury_wealth_cover.jpg",
+      "badge": "⭐ Executive Showcase",
+      "demoNote": "Interactive luxury wealth platform with live multi-currency conversion, dynamic portfolio yield curves, and wire settlement modal.",
+      "isPrivate": false
+    },
     "banana-dashboard": {
       "visible": true,
       "pinned": true,
