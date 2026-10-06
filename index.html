@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title id="page-title">ChingKheat | Interactive Project Showcase & Live Demos</title>
-  <link rel="stylesheet" href="css/style.css?v=4.0">
+  <link rel="stylesheet" href="css/style.css?v=6.0">
 </head>
 <body>
 
@@ -75,112 +75,9 @@
   </header>
 
   <!-- ======================================================================
-       INTERACTIVE LIVE DEMO ARENA (THE MAIN SHOWCASE)
+       ALL PROJECTS EXPLORER
        ====================================================================== -->
-  <section class="demo-arena-section" id="demo-arena-section">
-    <div class="container">
-      <div class="demo-arena-card">
-
-        <!-- Arena Top Bar -->
-        <div class="arena-header-bar">
-          <div class="arena-title-group">
-            <h2>
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--accent-primary)" stroke-width="2.5">
-                <polygon points="5 3 19 12 5 21 5 3"></polygon>
-              </svg>
-              Live Interactive Demo Arena
-            </h2>
-            <p>Click any project tab to test and interact with the live running application directly in your browser.</p>
-          </div>
-          <div>
-            <span class="live-pill"><span class="pulse-dot"></span> Live Embedded Preview</span>
-          </div>
-        </div>
-
-        <!-- Project Selector Tabs -->
-        <div class="demo-selector-tabs" id="demo-selector-tabs">
-          <!-- Populated by app.js: Malaysia-Travel-Apps, banana-dashboard, etc. -->
-        </div>
-
-        <!-- Arena Simulator Controls Toolbar (Hidden until project is selected) -->
-        <div class="arena-controls-bar" id="arena-controls-bar" style="display:none;">
-          <div class="device-switcher">
-            <button id="device-mobile-btn" class="device-btn active" onclick="App.setDeviceMode('mobile')" title="Switch to Mobile Smartphone Frame">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
-                <line x1="12" y1="18" x2="12.01" y2="18"></line>
-              </svg>
-              Phone View
-            </button>
-            <button id="device-desktop-btn" class="device-btn" onclick="App.setDeviceMode('desktop')" title="Switch to Desktop / Laptop Frame">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                <line x1="8" y1="21" x2="16" y2="21"></line>
-                <line x1="12" y1="17" x2="12" y2="21"></line>
-              </svg>
-              Desktop View
-            </button>
-          </div>
-
-          <div class="arena-action-btns">
-            <button id="arena-reload-btn" class="arena-btn" onclick="App.reloadActiveDemo()" title="Reload demo session">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <polyline points="23 4 23 10 17 10"></polyline>
-                <polyline points="1 20 1 14 7 14"></polyline>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-              </svg>
-              Reload
-            </button>
-            <button id="arena-fullscreen-btn" class="arena-btn" onclick="App.toggleArenaFullscreen()" title="Toggle Fullscreen">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path>
-              </svg>
-              Fullscreen
-            </button>
-            <button id="arena-newtab-btn" class="arena-btn" title="Open in dedicated tab">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
-                <polyline points="15 3 21 3 21 9"></polyline>
-                <line x1="10" y1="14" x2="21" y2="3"></line>
-              </svg>
-              Open Tab
-            </button>
-            <button id="arena-close-btn" class="arena-btn" onclick="App.renderStandbyScreen()" title="Close Screen & Return to Project Selection" style="color:var(--accent-danger); border-color:rgba(248,81,73,0.3);">
-              ✕ Close Screen
-            </button>
-          </div>
-        </div>
-
-        <!-- Viewport Stage (Smartphone Bezel or Desktop Browser Frame) -->
-        <div class="demo-viewport-stage" id="demo-viewport-stage">
-          <!-- Rendered dynamically by app.js -->
-        </div>
-
-        <!-- Arena Bottom Meta Bar -->
-        <div class="arena-info-footer">
-          <div class="arena-project-meta">
-            <h3 id="arena-project-title">Loading project...</h3>
-            <p id="arena-project-desc">Explore the live interactive application above.</p>
-          </div>
-          <div style="display:flex; flex-wrap:wrap; align-items:center; gap:0.75rem;">
-            <div id="arena-project-tags" class="tags-row" style="margin-bottom:0;"></div>
-            <a id="arena-github-link" href="#" target="_blank" rel="noopener" class="btn-secondary" style="font-size:0.85rem; padding:0.4rem 0.8rem;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-              View Code
-            </a>
-          </div>
-        </div>
-
-      </div>
-    </div>
-  </section>
-
-  <!-- ======================================================================
-       ALL PROJECTS GRID & DEMO CARDS
-       ====================================================================== -->
-  <main class="container" id="projects-section">
+  <main class="container" id="projects-section" style="padding-top: 1.5rem;">
     <section class="section">
       <div class="section-header">
         <h2 class="section-title">
@@ -268,8 +165,8 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/github-api.js?v=4.0"></script>
-  <script src="js/config-manager.js?v=4.0"></script>
-  <script src="js/app.js?v=4.0"></script>
+  <script src="js/github-api.js?v=6.0"></script>
+  <script src="js/config-manager.js?v=6.0"></script>
+  <script src="js/app.js?v=6.0"></script>
 </body>
 </html>
