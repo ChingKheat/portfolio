@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Malaysia IT Internship Directory</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --border: #e2e8f0;
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --badge-bg: #eff6ff;
+      --badge-text: #1d4ed8;
+      --tag-bg: #f1f5f9;
+      --tag-text: #334155;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+      --shadow-hover: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text-main);
+      padding: 2.5rem 1rem;
+      line-height: 1.5;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+
+    header {
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.25rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.025em;
+      margin-bottom: 0.5rem;
+    }
+
+    p.subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+
+    /* Controls: Search & Category Filter */
+    .controls {
+      background: var(--surface);
+      padding: 1.25rem;
+      border-radius: 14px;
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      margin-bottom: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+
+    .search-wrapper {
+      position: relative;
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 0.85rem 1rem 0.85rem 2.75rem;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      outline: none;
+      transition: all 0.2s ease;
+      background: #fafafa;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      pointer-events: none;
+    }
+
+    .filter-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .pill-btn {
+      padding: 0.45rem 0.95rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .pill-btn:hover {
+      background: var(--tag-bg);
+      color: var(--text-main);
+    }
+
+    .pill-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .results-count {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 1.25rem;
+      font-weight: 500;
+    }
+
+    /* Grid layout */
+    .company-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      gap: 1.25rem;
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 1.35rem;
+      box-shadow: var(--shadow);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      transition: all 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-hover);
+      border-color: #cbd5e1;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #0f172a;
+    }
+
+    .category-badge {
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 0.25rem 0.6rem;
+      border-radius: 6px;
+      background: var(--badge-bg);
+      color: var(--badge-text);
+      white-space: nowrap;
+    }
+
+    .meta-row {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .allowance-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      background: #ecfdf5;
+      color: #047857;
+      padding: 0.3rem 0.65rem;
+      border-radius: 6px;
+      margin-bottom: 0.85rem;
+      width: fit-content;
+    }
+
+    .tags-label {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: #94a3b8;
+      margin-bottom: 0.35rem;
+    }
+
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .tag {
+      font-size: 0.78rem;
+      padding: 0.2rem 0.55rem;
+      background: var(--tag-bg);
+      color: var(--tag-text);
+      border-radius: 5px;
+      font-weight: 500;
+    }
+
+    .card-footer {
+      border-top: 1px solid #f1f5f9;
+      padding-top: 0.9rem;
+      margin-top: auto;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .apply-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: background 0.2s ease;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .apply-btn:hover {
+      background: var(--primary-dark);
+    }
+
+    .no-results {
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 1rem;
+      color: var(--text-muted);
+      font-size: 1.1rem;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>🇲🇾 Malaysia IT Internship Directory</h1>
+      <p class="subtitle">Curated list of top tech companies, MNCs, fintechs, and startups hiring IT interns in Malaysia.</p>
+    </header>
+
+    <section class="controls">
+      <div class="search-wrapper">
+        <span class="search-icon">🔍</span>
+        <input 
+          type="text" 
+          id="searchInput" 
+          class="search-input" 
+          placeholder="Search by company, tech stack (e.g. Python, Cloud, C++), or location (Penang, Cyberjaya)..."
+        />
+      </div>
+
+      <div class="filter-pills" id="filterPills">
+        <button class="pill-btn active" data-category="all">All (25)</button>
+        <button class="pill-btn" data-category="Tech MNC">Tech MNCs</button>
+        <button class="pill-btn" data-category="Penang Tech">Penang Hardware/Semicon</button>
+        <button class="pill-btn" data-category="Fintech">Fintech & Banks</button>
+        <button class="pill-btn" data-category="Scale-up">Regional Scale-ups</button>
+        <button class="pill-btn" data-category="Software House">Agencies & Software Houses</button>
+      </div>
+    </section>
+
+    <div class="results-count" id="resultsCount">Showing all 25 companies</div>
+
+    <main class="company-grid" id="companyGrid">
+      <!-- Cards rendered via JavaScript -->
+    </main>
+  </div>
+
+  <script>
+    const companies = [
+      // 1. Tech MNCs (Klang Valley)
+      {
+        name: "Amazon Web Services (AWS)",
+        category: "Tech MNC",
+        location: "The Gardens / Mid Valley, KL",
+        allowance: "RM 2,500 – RM 3,500+",
+        techStack: ["Cloud Support", "AWS Architecture", "Python", "Data", "Networking"],
+        url: "https://www.amazon.jobs/en/search?base_query=Internship&country=MYS"
+      },
+      {
+        name: "Microsoft Malaysia",
+        category: "Tech MNC",
+        location: "Menara Shell, KL Sentral",
+        allowance: "RM 2,500 – RM 3,500",
+        techStack: ["Azure Cloud", "Technical Consulting", "C# / .NET", "Data & AI"],
+        url: "https://careers.microsoft.com/v2/global/en/students-graduates"
+      },
+      {
+        name: "Dell Technologies",
+        category: "Tech MNC",
+        location: "Cyberjaya, Selangor",
+        allowance: "RM 1,500 – RM 2,200",
+        techStack: ["Software Engineering", "Systems Architecture", "Python", "Cloud/DevOps"],
+        url: "https://jobs.dell.com/search-jobs/Malaysia"
+      },
+      {
+        name: "Experian",
+        category: "Tech MNC",
+        location: "Cyberjaya, Selangor",
+        allowance: "RM 1,500 – RM 2,000",
+        techStack: ["Data Analytics", "Java / Spring Boot", "Cybersecurity", "Cloud"],
+        url: "https://www.experian.com/careers"
+      },
+      {
+        name: "Cognizant Malaysia",
+        category: "Tech MNC",
+        location: "Cyberjaya / KL",
+        allowance: "RM 1,200 – RM 1,800",
+        techStack: ["Full Stack", "QA Automation", "Java", "Enterprise Systems"],
+        url: "https://careers.cognizant.com"
+      },
+      {
+        name: "DXC Technology",
+        category: "Tech MNC",
+        location: "Cyberjaya / Subang Jaya",
+        allowance: "RM 1,200 – RM 1,600",
+        techStack: ["Cloud Operations", "IT Infrastructure", "Systems Admin", "Security"],
+        url: "https://dxc.com/careers"
+      },
+      {
+        name: "HP Inc. / HPE",
+        category: "Tech MNC",
+        location: "Cyberjaya / KL",
+        allowance: "RM 1,500 – RM 2,000",
+        techStack: ["DevOps", "Software Solutions", "System Automation", "Python"],
+        url: "https://jobs.hp.com/"
+      },
+
+      // 2. Penang Tech Hub
+      {
+        name: "Intel Malaysia",
+        category: "Penang Tech",
+        location: "Bayan Lepas, Penang / Kulim",
+        allowance: "RM 1,800 – RM 2,500",
+        techStack: ["Firmware", "Software Validation", "Python", "C/C++", "Silicon Automation"],
+        url: "https://jobs.intel.com/en/search-jobs/Malaysia"
+      },
+      {
+        name: "Keysight Technologies",
+        category: "Penang Tech",
+        location: "Bayan Lepas, Penang",
+        allowance: "RM 1,800 – RM 2,500",
+        techStack: ["C# / .NET", "Test Automation", "Signal Processing", "Firmware", "Python"],
+        url: "https://jobs.keysight.com/search/?q=Intern&locationsearch=Malaysia"
+      },
+      {
+        name: "AMD Global Services",
+        category: "Penang Tech",
+        location: "Bayan Lepas, Penang / Cyberjaya",
+        allowance: "RM 1,800 – RM 2,400",
+        techStack: ["GPU/Silicon Verification", "Linux", "C++", "Python Scripting"],
+        url: "https://careers.amd.com/careers-home/jobs?keyword=Intern&location=Malaysia"
+      },
+      {
+        name: "Micron Technology",
+        category: "Penang Tech",
+        location: "Batu Kawan, Penang",
+        allowance: "RM 1,500 – RM 2,200",
+        techStack: ["Smart Manufacturing", "Data Engineering", "IoT", "SQL / Python"],
+        url: "https://jobs.micron.com/search/?q=Intern&locationsearch=Malaysia"
+      },
+      {
+        name: "Motorola Solutions",
+        category: "Penang Tech",
+        location: "Bayan Lepas, Penang",
+        allowance: "RM 1,500 – RM 2,200",
+        techStack: ["Embedded Linux", "C/C++", "Radio Communications", "Cybersecurity"],
+        url: "https://motorolasolutions.wd5.myworkdayjobs.com/Careers"
+      },
+
+      // 3. Fintech & Banks
+      {
+        name: "Touch 'n Go Digital (TNGD)",
+        category: "Fintech",
+        location: "Bangsar South, KL",
+        allowance: "RM 1,500 – RM 2,200",
+        techStack: ["Go (Golang)", "Java", "Mobile (Flutter / React Native)", "Microservices"],
+        url: "https://www.linkedin.com/company/tngdigital/jobs/"
+      },
+      {
+        name: "Maybank",
+        category: "Fintech",
+        location: "Menara Maybank / Bangsar, KL",
+        allowance: "RM 1,200 – RM 1,800",
+        techStack: ["Core Banking Systems", "Mobile Dev", "Cloud", "Cybersecurity"],
+        url: "https://www.maybank.com/en/careers/students-graduates/internships.page"
+      },
+      {
+        name: "CIMB Group",
+        category: "Fintech",
+        location: "KL Sentral, KL",
+        allowance: "RM 1,200 – RM 1,500",
+        techStack: ["Data Analytics", "Full Stack", "DevOps", "Financial Systems"],
+        url: "https://www.cimb.com/en/careers/students/the-complete-banker-internship.html"
+      },
+      {
+        name: "MoneyLion",
+        category: "Fintech",
+        location: "KL Sentral, KL",
+        allowance: "RM 1,500 – RM 2,500",
+        techStack: ["AI / Machine Learning", "Data Science", "Python", "Microservices"],
+        url: "https://www.moneylion.com/careers/"
+      },
+      {
+        name: "Boost (Axiata Digital)",
+        category: "Fintech",
+        location: "KL Sentral, KL",
+        allowance: "RM 1,200 – RM 1,800",
+        techStack: ["Fintech Backend", "Payment Gateways", "REST APIs", "Node.js / Java"],
+        url: "https://www.myboost.com.my/"
+      },
+      {
+        name: "Hong Leong Bank",
+        category: "Fintech",
+        location: "Damansara City, KL",
+        allowance: "RM 1,200 – RM 1,600",
+        techStack: ["Digital Banking", "UI/UX", "Cloud Architecture", "Data"],
+        url: "https://www.hlb.com.my/en/personal-banking/about-us/careers.html"
+      },
+
+      // 4. Regional Scale-ups
+      {
+        name: "Grab Malaysia",
+        category: "Scale-up",
+        location: "Petaling Jaya, Selangor",
+        allowance: "RM 1,800 – RM 2,800",
+        techStack: ["Go (Golang)", "React", "Data Engineering", "Distributed Systems"],
+        url: "https://grab.careers/jobs/"
+      },
+      {
+        name: "Carsome",
+        category: "Scale-up",
+        location: "Petaling Jaya / Mutiara Damansara",
+        allowance: "RM 1,200 – RM 1,800",
+        techStack: ["Frontend (React / Vue)", "Node.js", "Product / QA", "Data"],
+        url: "https://careers.carsome.com/"
+      },
+      {
+        name: "Foodpanda Malaysia",
+        category: "Scale-up",
+        location: "Bangsar South, KL",
+        allowance: "RM 1,500 – RM 2,000",
+        techStack: ["Logistics Routing", "QA Testing", "React / Typescript", "Python"],
+        url: "https://careers.foodpanda.com/"
+      },
+      {
+        name: "Aerodyne Group",
+        category: "Scale-up",
+        location: "Cyberjaya, Selangor",
+        allowance: "RM 1,000 – RM 1,500",
+        techStack: ["AI Computer Vision", "Drone Tech", "Python", "GIS / Mapping"],
+        url: "https://aerodyne.group/careers"
+      },
+      {
+        name: "AirAsia MOVE (Capital A)",
+        category: "Scale-up",
+        location: "KL Sentral / Sepang",
+        allowance: "RM 1,000 – RM 1,500",
+        techStack: ["Travel SuperApp", "Mobile Apps", "API Engineering", "Cloud"],
+        url: "https://airasia.hotjob.cloud/"
+      },
+
+      // 5. Software Houses & Agencies
+      {
+        name: "Snappymob",
+        category: "Software House",
+        location: "Bangsar, KL",
+        allowance: "RM 1,000 – RM 1,500",
+        techStack: ["iOS (Swift)", "Android (Kotlin)", "Flutter", "React", "TypeScript"],
+        url: "https://snappymob.com/careers/"
+      },
+      {
+        name: "Silverlake Axis",
+        category: "Software House",
+        location: "Petaling Jaya, Selangor",
+        allowance: "RM 1,000 – RM 1,500",
+        techStack: ["Core Banking Systems", "Fintech Solutions", "Java", "SQL"],
+        url: "https://www.silverlakeaxis.com/careers/"
+      }
+    ];
+
+    const grid = document.getElementById("companyGrid");
+    const searchInput = document.getElementById("searchInput");
+    const pillButtons = document.querySelectorAll(".pill-btn");
+    const countDisplay = document.getElementById("resultsCount");
+
+    let currentCategory = "all";
+    let searchQuery = "";
+
+    function renderCompanies() {
+      const filtered = companies.filter(c => {
+        const matchesCategory = currentCategory === "all" || c.category === currentCategory;
+        const searchTarget = (c.name + " " + c.location + " " + c.category + " " + c.techStack.join(" ")).toLowerCase();
+        const matchesSearch = searchTarget.includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      });
+
+      countDisplay.textContent = `Showing ${filtered.length} of ${companies.length} companies`;
+
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="no-results">No companies found matching "<strong>${searchQuery}</strong>". Try searching for another skill or location.</div>`;
+        return;
+      }
+
+      grid.innerHTML = filtered.map(c => `
+        <div class="card">
+          <div>
+            <div class="card-header">
+              <h2 class="card-title">${c.name}</h2>
+              <span class="category-badge">${c.category}</span>
+            </div>
+
+            <div class="meta-row">
+              <span>📍</span>
+              <span>${c.location}</span>
+            </div>
+
+            <div class="allowance-badge">
+              <span>💵</span>
+              <span>${c.allowance}</span>
+            </div>
+
+            <div class="tags-label">Tech Stack & Focus:</div>
+            <div class="tags-container">
+              ${c.techStack.map(t => `<span class="tag">${t}</span>`).join("")}
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <a href="${c.url}" target="_blank" rel="noopener noreferrer" class="apply-btn">
+              Apply / View Careers ↗
+            </a>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    // Event Listeners
+    searchInput.addEventListener("input", (e) => {
+      searchQuery = e.target.value.trim();
+      renderCompanies();
+    });
+
+    pillButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        pillButtons.forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        currentCategory = btn.dataset.category;
+        renderCompanies();
+      });
+    });
+
+    // Initial render
+    renderCompanies();
+  </script>
+</body>
+</html>

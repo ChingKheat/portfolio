@@ -8,7 +8,7 @@ Thumbs.db
 .vscode/
 .idea/
 .system_generated/
-# Cloned projects
+# Standalone projects kept locally
+/auto-clicker/
 /geo_heritage/
 /geo_heritage_personal/
-/auto-clicker/
