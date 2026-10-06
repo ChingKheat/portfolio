@@ -1,5 +1,5 @@
 /**
- * Admin Portal Application Logic: Authentication, Project Management, and GitHub Cloud Sync
+ * Admin Portal Application Logic: Authentication, Live Demo Management, and GitHub Cloud Sync
  */
 
 const Admin = {
@@ -55,7 +55,6 @@ const Admin = {
   },
 
   bindEvents() {
-    // Auth form submit
     document.getElementById('login-form')?.addEventListener('submit', (e) => {
       e.preventDefault();
       const pin = document.getElementById('admin-pin-input')?.value;
@@ -64,32 +63,23 @@ const Admin = {
 
     document.getElementById('logout-btn')?.addEventListener('click', () => this.logout());
 
-    // Search and filters in admin table
     document.getElementById('admin-search')?.addEventListener('input', () => this.filterProjects());
     document.getElementById('admin-filter-status')?.addEventListener('change', () => this.filterProjects());
 
-    // Actions
     document.getElementById('save-config-btn')?.addEventListener('click', () => this.saveChanges());
     document.getElementById('download-config-btn')?.addEventListener('click', () => this.downloadConfig());
     document.getElementById('refresh-github-btn')?.addEventListener('click', () => this.refreshGitHubData());
     document.getElementById('push-github-btn')?.addEventListener('click', () => this.pushToGitHubCloud());
 
-    // Edit modal events
     document.getElementById('edit-modal-close')?.addEventListener('click', () => this.closeEditModal());
     document.getElementById('cancel-edit-btn')?.addEventListener('click', () => this.closeEditModal());
     document.getElementById('save-project-btn')?.addEventListener('click', () => this.saveProjectDetails());
 
-    // GitHub Token show/hide toggle
     document.getElementById('toggle-token-visibility')?.addEventListener('click', () => {
       const input = document.getElementById('github-pat-input');
-      if (input.type === 'password') {
-        input.type = 'text';
-      } else {
-        input.type = 'password';
-      }
+      input.type = input.type === 'password' ? 'text' : 'password';
     });
 
-    // Save Settings form
     document.getElementById('save-settings-btn')?.addEventListener('click', () => this.saveGeneralSettings());
   },
 
@@ -98,7 +88,6 @@ const Admin = {
       this.config = await ConfigManager.loadConfig();
       const username = this.config.settings.githubUsername || 'ChingKheat';
 
-      // Fill settings fields
       document.getElementById('settings-username').value = username;
       document.getElementById('settings-title').value = this.config.settings.dashboardTitle || '';
       document.getElementById('settings-subtitle').value = this.config.settings.dashboardSubtitle || '';
@@ -107,10 +96,7 @@ const Admin = {
       const savedPat = localStorage.getItem('gh_admin_pat') || '';
       document.getElementById('github-pat-input').value = savedPat;
 
-      // Fetch Repositories
       this.allRepos = await GitHubAPI.getUserRepositories(username, false, this.config.settings.cacheTtlMinutes || 60);
-
-      // Merge with config
       this.mergedProjects = ConfigManager.mergeReposWithConfig(this.allRepos, this.config);
       this.filteredProjects = [...this.mergedProjects];
 
@@ -126,11 +112,11 @@ const Admin = {
 
   updateStats() {
     const totalCount = this.mergedProjects.length;
-    const pinnedCount = this.mergedProjects.filter(p => p.pinned).length;
+    const demoCount = this.mergedProjects.filter(p => p.hasLiveDemo).length;
     const hiddenCount = this.mergedProjects.filter(p => !p.visible).length;
 
     document.getElementById('stat-admin-total').textContent = totalCount;
-    document.getElementById('stat-admin-pinned').textContent = pinnedCount;
+    document.getElementById('stat-admin-pinned').textContent = demoCount;
     document.getElementById('stat-admin-hidden').textContent = hiddenCount;
   },
 
@@ -152,7 +138,7 @@ const Admin = {
         p.customDescription.toLowerCase().includes(search);
 
       let matchStatus = true;
-      if (status === 'pinned') matchStatus = p.pinned === true;
+      if (status === 'demos') matchStatus = p.hasLiveDemo === true;
       if (status === 'hidden') matchStatus = p.visible === false;
       if (status === 'visible') matchStatus = p.visible === true;
 
@@ -184,10 +170,7 @@ const Admin = {
           <div style="font-size: 0.8rem; color: var(--text-dim); font-family: var(--font-mono);">${p.name}</div>
         </td>
         <td>
-          <span style="display:inline-flex; align-items:center; gap:5px; font-size:0.85rem;">
-            <span class="lang-dot" style="background:${this.getLangColor(p.language)};"></span>
-            ${p.language}
-          </span>
+          <span style="font-size: 0.85rem; color: var(--text-muted);">${p.language || 'Code'}</span>
         </td>
         <td>
           <label class="switch" title="Toggle visibility in public view">
@@ -196,15 +179,13 @@ const Admin = {
           </label>
         </td>
         <td>
-          <label class="switch" title="Toggle pinned/featured spotlight">
-            <input type="checkbox" class="toggle-pinned" data-repo="${p.name}" ${p.pinned ? 'checked' : ''}>
-            <span class="slider"></span>
-          </label>
+          ${p.hasLiveDemo 
+            ? `<span class="live-pill"><span class="pulse-dot"></span> Live Ready</span>` 
+            : `<span style="font-size:0.75rem; color:var(--text-dim);">No Demo URL</span>`}
         </td>
         <td>
-          <span style="font-size: 0.85rem; color: var(--text-muted);">
-            ${p.tags && p.tags.length > 0 ? p.tags.slice(0, 2).join(', ') : 'None'}
-            ${p.tags && p.tags.length > 2 ? ` +${p.tags.length - 2}` : ''}
+          <span style="font-size: 0.82rem; font-weight:600; color:var(--text-muted);">
+            ${p.demoType === 'mobile' ? '📱 Phone (390px)' : '💻 Desktop View'}
           </span>
         </td>
         <td>
@@ -213,24 +194,16 @@ const Admin = {
               <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
             </svg>
-            Edit
+            Edit Demo
           </button>
         </td>
       </tr>
     `).join('');
 
-    // Attach listeners
     tbody.querySelectorAll('.toggle-visibility').forEach(input => {
       input.addEventListener('change', (e) => {
         const repo = e.target.getAttribute('data-repo');
         this.toggleVisibility(repo, e.target.checked);
-      });
-    });
-
-    tbody.querySelectorAll('.toggle-pinned').forEach(input => {
-      input.addEventListener('change', (e) => {
-        const repo = e.target.getAttribute('data-repo');
-        this.togglePinned(repo, e.target.checked);
       });
     });
 
@@ -240,15 +213,6 @@ const Admin = {
         this.openEditModal(repo);
       });
     });
-  },
-
-  getLangColor(lang) {
-    const colors = {
-      'Dart': '#00B4AB', 'Flutter': '#02569B', 'Vue': '#41B883',
-      'HTML': '#e34c26', 'CSS': '#563d7c', 'JavaScript': '#f1e05a',
-      'TypeScript': '#3178c6', 'Python': '#3572A5', 'Java': '#b07219'
-    };
-    return colors[lang] || '#8b949e';
   },
 
   toggleVisibility(repoName, isVisible) {
@@ -262,17 +226,6 @@ const Admin = {
     this.showToast(`Updated visibility for ${repoName}`, 'info');
   },
 
-  togglePinned(repoName, isPinned) {
-    if (!this.config.projects[repoName]) this.config.projects[repoName] = {};
-    this.config.projects[repoName].pinned = isPinned;
-
-    const proj = this.mergedProjects.find(p => p.name === repoName);
-    if (proj) proj.pinned = isPinned;
-
-    this.updateStats();
-    this.showToast(`Updated pinned state for ${repoName}`, 'info');
-  },
-
   openEditModal(repoName) {
     const project = this.mergedProjects.find(p => p.name === repoName);
     if (!project) return;
@@ -284,6 +237,7 @@ const Admin = {
     document.getElementById('edit-desc').value = project.customDescription || '';
     document.getElementById('edit-tags').value = (project.tags || []).join(', ');
     document.getElementById('edit-demo').value = project.demoUrl || '';
+    document.getElementById('edit-demo-type').value = project.demoType || 'mobile';
     document.getElementById('edit-cover').value = project.coverImage || '';
     document.getElementById('edit-badge').value = project.badge || '';
     document.getElementById('edit-priority').value = project.priority || 10;
@@ -306,11 +260,15 @@ const Admin = {
 
     const rawTags = document.getElementById('edit-tags').value;
     const tagsArray = rawTags.split(',').map(t => t.trim()).filter(Boolean);
+    const demoUrl = document.getElementById('edit-demo').value.trim();
+    const demoType = document.getElementById('edit-demo-type').value;
 
     this.config.projects[name].customTitle = document.getElementById('edit-title').value.trim();
     this.config.projects[name].customDescription = document.getElementById('edit-desc').value.trim();
     this.config.projects[name].tags = tagsArray;
-    this.config.projects[name].demoUrl = document.getElementById('edit-demo').value.trim();
+    this.config.projects[name].demoUrl = demoUrl;
+    this.config.projects[name].demoType = demoType;
+    this.config.projects[name].hasLiveDemo = Boolean(demoUrl);
     this.config.projects[name].coverImage = document.getElementById('edit-cover').value.trim();
     this.config.projects[name].badge = document.getElementById('edit-badge').value.trim();
     this.config.projects[name].priority = parseInt(document.getElementById('edit-priority').value, 10) || 10;
@@ -318,9 +276,10 @@ const Admin = {
     // Refresh merged array
     this.mergedProjects = ConfigManager.mergeReposWithConfig(this.allRepos, this.config);
     this.filterProjects();
+    this.updateStats();
     this.closeEditModal();
 
-    this.showToast(`Saved details for ${name}!`, 'success');
+    this.showToast(`Saved demo settings for ${name}!`, 'success');
   },
 
   saveGeneralSettings() {
@@ -374,7 +333,7 @@ const Admin = {
 
   async pushToGitHubCloud() {
     const username = this.config.settings.githubUsername || 'ChingKheat';
-    const repo = prompt('Enter your GitHub repository name (e.g., your GitHub Pages repository name):');
+    const repo = prompt('Enter your repository name (e.g., portfolio):', 'portfolio');
     if (!repo) return;
 
     const pat = localStorage.getItem('gh_admin_pat');
@@ -407,7 +366,7 @@ const Admin = {
       toast.style.opacity = '0';
       toast.style.transition = 'opacity 0.3s ease';
       setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    }, 3200);
   }
 };
 

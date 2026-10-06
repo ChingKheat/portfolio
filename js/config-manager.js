@@ -36,8 +36,8 @@ const ConfigManager = {
     this.activeConfig = {
       settings: {
         githubUsername: 'ChingKheat',
-        dashboardTitle: "ChingKheat's Project Portfolio",
-        dashboardSubtitle: 'Showcase of software engineering projects, mobile apps, and open-source experiments',
+        dashboardTitle: "ChingKheat | Interactive Project Showcase & Live Demos",
+        dashboardSubtitle: 'Test and explore live interactive web applications and mobile apps directly in your browser',
         adminPin: 'admin123',
         cacheTtlMinutes: 60
       },
@@ -76,6 +76,10 @@ const ConfigManager = {
           ? repo.topics
           : (repo.language ? [repo.language] : ['Software']);
 
+      const demoUrl = custom.demoUrl || repo.homepage || '';
+      const hasLiveDemo = custom.hasLiveDemo !== undefined ? custom.hasLiveDemo : Boolean(demoUrl);
+      const demoType = custom.demoType || (repo.language === 'Dart' ? 'mobile' : 'desktop');
+
       return {
         // GitHub raw fields
         id: repo.id,
@@ -96,24 +100,58 @@ const ConfigManager = {
         sizeKb: repo.size || 0,
         topics: repo.topics || [],
 
-        // Custom config fields
+        // Custom config & Live Demo fields
         visible: isVisible,
         pinned: isPinned,
         priority: priority,
         customTitle: title,
         customDescription: description,
         tags: tags,
-        demoUrl: custom.demoUrl || repo.homepage || '',
+        demoUrl: demoUrl,
+        hasLiveDemo: hasLiveDemo,
+        demoType: demoType,
+        demoNote: custom.demoNote || '',
         coverImage: custom.coverImage || '',
-        badge: custom.badge || (isPinned ? 'Featured' : '')
+        badge: custom.badge || (hasLiveDemo ? 'Live Demo' : (isPinned ? 'Featured' : ''))
       };
+    });
+
+    // Also include any custom config projects that might not be in ghRepos yet
+    Object.keys(projectConfigs).forEach(key => {
+      const exists = mergedList.some(p => p.name === key);
+      if (!exists) {
+        const custom = projectConfigs[key];
+        mergedList.push({
+          id: key,
+          name: key,
+          fullName: `ChingKheat/${key}`,
+          htmlUrl: `https://github.com/ChingKheat/${key}`,
+          language: custom.tags && custom.tags[0] ? custom.tags[0] : 'App',
+          stars: 0,
+          forks: 0,
+          watchers: 0,
+          openIssues: 0,
+          updatedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
+          defaultBranch: 'main',
+          visible: custom.visible !== undefined ? custom.visible : true,
+          pinned: custom.pinned !== undefined ? custom.pinned : false,
+          priority: custom.priority || 99,
+          customTitle: custom.customTitle || key,
+          customDescription: custom.customDescription || '',
+          tags: custom.tags || [],
+          demoUrl: custom.demoUrl || '',
+          hasLiveDemo: custom.hasLiveDemo || Boolean(custom.demoUrl),
+          demoType: custom.demoType || 'desktop',
+          demoNote: custom.demoNote || '',
+          coverImage: custom.coverImage || '',
+          badge: custom.badge || ''
+        });
+      }
     });
 
     // Sort by priority first, then updated date
     mergedList.sort((a, b) => {
-      if (a.pinned !== b.pinned) {
-        return a.pinned ? -1 : 1;
-      }
       if (a.priority !== b.priority) {
         return a.priority - b.priority;
       }

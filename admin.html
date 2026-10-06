@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Portal - GitHub Projects Dashboard</title>
+  <title>Admin Portal - Project Demo Management</title>
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -17,7 +17,7 @@
           <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
         </svg>
         <h2 style="font-size:1.4rem; font-weight:700;">Admin Authentication</h2>
-        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.35rem;">Enter your passcode to manage projects and settings</p>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.35rem;">Enter your passcode to manage project demos and settings</p>
       </div>
 
       <form id="login-form">
@@ -50,7 +50,7 @@
             <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
             <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
           </svg>
-          <span>Admin Portal</span>
+          <span>Admin Portal &bull; Live Demo Manager</span>
         </div>
         <div class="nav-actions">
           <a href="index.html" class="btn-secondary" title="View Public Dashboard">
@@ -71,9 +71,9 @@
 
       <!-- Header & Stat Cards -->
       <header class="admin-header">
-        <h1 style="font-size:1.75rem; font-weight:800;">Repository & Project Management</h1>
+        <h1 style="font-size:1.75rem; font-weight:800;">Project Demos &amp; Showcase Manager</h1>
         <p style="color:var(--text-muted); font-size:0.95rem; margin-top:0.3rem;">
-          Customize visibility, pin showcase highlights, add demo links, custom descriptions, and sync directly with GitHub.
+          Set live demo links, customize simulator viewports (Phone / Desktop), edit descriptions, and save changes to GitHub Cloud.
         </p>
 
         <div class="admin-stats-grid">
@@ -82,8 +82,8 @@
             <span class="admin-stat-value" id="stat-admin-total">0</span>
           </div>
           <div class="admin-stat-card">
-            <span class="admin-stat-title">Pinned in Spotlight</span>
-            <span class="admin-stat-value" id="stat-admin-pinned" style="color:var(--accent-warning);">0</span>
+            <span class="admin-stat-title">Interactive Live Demos</span>
+            <span class="admin-stat-value" id="stat-admin-pinned" style="color:var(--accent-secondary);">0</span>
           </div>
           <div class="admin-stat-card">
             <span class="admin-stat-title">Hidden Repositories</span>
@@ -147,7 +147,7 @@
         <div>
           <select id="admin-filter-status" class="select-control">
             <option value="all">All Repositories</option>
-            <option value="pinned">Pinned in Spotlight</option>
+            <option value="demos">🟢 Live Demos</option>
             <option value="visible">Visible</option>
             <option value="hidden">Hidden</option>
           </select>
@@ -160,10 +160,10 @@
           <thead>
             <tr>
               <th>Repository</th>
-              <th>Language</th>
+              <th>Tech Stack</th>
               <th>Visible</th>
-              <th>Pinned</th>
-              <th>Tags</th>
+              <th>Live Demo Ready</th>
+              <th>Demo Mode</th>
               <th>Action</th>
             </tr>
           </thead>
@@ -175,7 +175,7 @@
 
       <!-- Settings & GitHub Credentials Section -->
       <section style="margin-top:3rem; background:var(--bg-surface); border:1px solid var(--border-color); border-radius:var(--radius-lg); padding:1.75rem;">
-        <h2 style="font-size:1.3rem; font-weight:700; margin-bottom:0.5rem;">Settings & GitHub Cloud Credentials</h2>
+        <h2 style="font-size:1.3rem; font-weight:700; margin-bottom:0.5rem;">Settings &amp; GitHub Cloud Credentials</h2>
         <p style="color:var(--text-muted); font-size:0.88rem; margin-bottom:1.5rem;">
           Configure your portfolio identity and GitHub Cloud authentication credentials.
         </p>
@@ -195,11 +195,11 @@
           <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:1rem;">
             <div class="form-group">
               <label class="form-label" for="settings-title">Dashboard Title</label>
-              <input type="text" id="settings-title" class="form-input" placeholder="e.g. ChingKheat's Portfolio">
+              <input type="text" id="settings-title" class="form-input" placeholder="e.g. ChingKheat | Live Demos">
             </div>
             <div class="form-group">
               <label class="form-label" for="settings-subtitle">Dashboard Subtitle</label>
-              <input type="text" id="settings-subtitle" class="form-input" placeholder="e.g. Software engineering projects">
+              <input type="text" id="settings-subtitle" class="form-input" placeholder="e.g. Test interactive web & mobile apps">
             </div>
           </div>
 
@@ -232,10 +232,10 @@
 
     <!-- Edit Project Details Modal -->
     <div id="project-edit-modal" class="modal-backdrop" role="dialog" aria-modal="true">
-      <div class="modal-container" style="max-width:650px;">
+      <div class="modal-container" style="max-width:680px;">
         <div class="modal-header">
           <div class="modal-title">
-            <span>Edit Project: <strong id="edit-repo-name-label">repo</strong></span>
+            <span>Configure Demo: <strong id="edit-repo-name-label">repo</strong></span>
           </div>
           <button id="edit-modal-close" class="modal-close">&times;</button>
         </div>
@@ -245,35 +245,53 @@
             <input type="text" id="edit-title" class="form-input" placeholder="Project Title">
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="edit-desc">Custom Description</label>
-            <textarea id="edit-desc" class="form-textarea" placeholder="Add an informative summary for this project..."></textarea>
+          <!-- LIVE DEMO URL & SIMULATOR TYPE -->
+          <div style="background:var(--bg-surface-elevated); padding:1rem; border-radius:var(--radius-md); border:1px solid var(--border-color); margin-bottom:1.25rem;">
+            <div style="display:flex; align-items:center; gap:6px; font-weight:700; margin-bottom:0.75rem; color:var(--accent-secondary);">
+              <span class="pulse-dot"></span> Interactive Live Demo Configuration
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="edit-demo">Live Demo URL (Web / Compiled App)</label>
+              <input type="url" id="edit-demo" class="form-input" placeholder="https://chingkheat.github.io/my-app/">
+              <div class="form-hint">The URL of your hosted web app, GitHub Pages deployment, or demo site.</div>
+            </div>
+
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="edit-demo-type">Simulator Frame</label>
+                <select id="edit-demo-type" class="form-select">
+                  <option value="mobile">📱 Phone Simulator (390px)</option>
+                  <option value="desktop">💻 Desktop / Laptop Frame</option>
+                </select>
+              </div>
+
+              <div class="form-group" style="margin-bottom:0;">
+                <label class="form-label" for="edit-badge">Category Badge</label>
+                <input type="text" id="edit-badge" class="form-input" placeholder="e.g. Flutter Web, Live Web App">
+              </div>
+            </div>
           </div>
 
-          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
-            <div class="form-group">
-              <label class="form-label" for="edit-badge">Custom Badge / Category</label>
-              <input type="text" id="edit-badge" class="form-input" placeholder="e.g. Mobile, AI, Web">
-            </div>
-            <div class="form-group">
-              <label class="form-label" for="edit-priority">Display Order / Priority</label>
-              <input type="number" id="edit-priority" class="form-input" placeholder="1" min="1" max="999">
-            </div>
+          <div class="form-group">
+            <label class="form-label" for="edit-desc">Project Description</label>
+            <textarea id="edit-desc" class="form-textarea" placeholder="Add an informative summary for this project..."></textarea>
           </div>
 
           <div class="form-group">
             <label class="form-label" for="edit-tags">Tags (comma-separated)</label>
-            <input type="text" id="edit-tags" class="form-input" placeholder="e.g. Flutter, Dart, Mobile, API">
+            <input type="text" id="edit-tags" class="form-input" placeholder="e.g. Flutter, Dart, Mobile App, Travel">
           </div>
 
-          <div class="form-group">
-            <label class="form-label" for="edit-demo">Live Demo / Homepage URL</label>
-            <input type="url" id="edit-demo" class="form-input" placeholder="https://example.com/demo">
-          </div>
-
-          <div class="form-group">
-            <label class="form-label" for="edit-cover">Cover Screenshot / Image URL</label>
-            <input type="url" id="edit-cover" class="form-input" placeholder="https://images.unsplash.com/... or assets/cover.png">
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
+            <div class="form-group">
+              <label class="form-label" for="edit-cover">Cover Image / Banner URL</label>
+              <input type="url" id="edit-cover" class="form-input" placeholder="https://images.unsplash.com/... or assets/cover.png">
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="edit-priority">Display Order</label>
+              <input type="number" id="edit-priority" class="form-input" placeholder="1" min="1" max="999">
+            </div>
           </div>
 
           <div style="display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1.5rem;">

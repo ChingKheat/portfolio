@@ -1,15 +1,14 @@
 /**
- * User View Application Logic: Project Showcase, Search, Filtering, and Modals
+ * User View Application Logic: Interactive Demo Arena, Device Simulators, and Project Showcase
  */
 
 const App = {
   allProjects: [],
   filteredProjects: [],
   currentConfig: null,
-  activeView: 'grid',
-  activeProject: null,
+  activeDemoProject: null,
+  activeDeviceMode: 'mobile', // 'mobile' or 'desktop'
 
-  // Language color mappings matching GitHub's standard colors
   languageColors: {
     'Dart': '#00B4AB',
     'Flutter': '#02569B',
@@ -20,16 +19,8 @@ const App = {
     'TypeScript': '#3178c6',
     'Python': '#3572A5',
     'Java': '#b07219',
-    'C++': '#f34b7d',
-    'C': '#555555',
-    'C#': '#178600',
-    'PHP': '#4F5D95',
-    'Go': '#00ADD8',
-    'Rust': '#dea584',
-    'Kotlin': '#A97BFF',
-    'Swift': '#F05138',
-    'Shell': '#89e051',
-    'Code': '#8b949e'
+    'Mobile App': '#00B4AB',
+    'Code': '#8b99ad'
   },
 
   async init() {
@@ -38,9 +29,6 @@ const App = {
     await this.loadData();
   },
 
-  /**
-   * Initialize and restore Dark/Light theme
-   */
   initTheme() {
     const savedTheme = localStorage.getItem('theme_preference') || 'dark';
     document.documentElement.setAttribute('data-theme', savedTheme);
@@ -83,9 +71,6 @@ const App = {
     }
   },
 
-  /**
-   * Bind DOM event listeners
-   */
   bindEvents() {
     // Theme toggle
     document.getElementById('theme-toggle-btn')?.addEventListener('click', () => this.toggleTheme());
@@ -93,12 +78,20 @@ const App = {
     // Search and filters
     document.getElementById('search-input')?.addEventListener('input', () => this.applyFilters());
     document.getElementById('language-filter')?.addEventListener('change', () => this.applyFilters());
-    document.getElementById('tag-filter')?.addEventListener('change', () => this.applyFilters());
-    document.getElementById('sort-select')?.addEventListener('change', () => this.applyFilters());
+    document.getElementById('demo-filter')?.addEventListener('change', () => this.applyFilters());
 
-    // View toggle buttons
-    document.getElementById('view-grid-btn')?.addEventListener('click', () => this.setView('grid'));
-    document.getElementById('view-list-btn')?.addEventListener('click', () => this.setView('list'));
+    // Arena Device Switcher
+    document.getElementById('device-mobile-btn')?.addEventListener('click', () => this.setDeviceMode('mobile'));
+    document.getElementById('device-desktop-btn')?.addEventListener('click', () => this.setDeviceMode('desktop'));
+
+    // Arena Action Buttons
+    document.getElementById('arena-reload-btn')?.addEventListener('click', () => this.reloadActiveDemo());
+    document.getElementById('arena-fullscreen-btn')?.addEventListener('click', () => this.toggleArenaFullscreen());
+    document.getElementById('arena-newtab-btn')?.addEventListener('click', () => {
+      if (this.activeDemoProject && this.activeDemoProject.demoUrl) {
+        window.open(this.activeDemoProject.demoUrl, '_blank', 'noopener');
+      }
+    });
 
     // Modal Close
     document.getElementById('modal-close-btn')?.addEventListener('click', () => this.closeModal());
@@ -106,72 +99,55 @@ const App = {
       if (e.target.id === 'project-modal') this.closeModal();
     });
 
-    // Modal Tabs
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const tab = e.currentTarget.getAttribute('data-tab');
-        this.switchModalTab(tab);
-      });
-    });
-
-    // Keyboard ESC to close modal
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.closeModal();
     });
   },
 
-  /**
-   * Load all GitHub data and configuration
-   */
   async loadData() {
     try {
       this.currentConfig = await ConfigManager.loadConfig();
       const username = this.currentConfig.settings.githubUsername || 'ChingKheat';
 
-      // Update basic texts from config
-      document.getElementById('page-title').textContent = this.currentConfig.settings.dashboardTitle || `${username}'s Project Showcase`;
-      document.getElementById('header-subtitle').textContent = this.currentConfig.settings.dashboardSubtitle || 'GitHub Projects Dashboard';
-      document.getElementById('nav-brand-title').textContent = this.currentConfig.settings.dashboardTitle || `${username} Projects`;
+      // Update titles
+      document.getElementById('page-title').textContent = this.currentConfig.settings.dashboardTitle || `${username}'s Project Demos`;
+      document.getElementById('nav-brand-title').textContent = `${username} | Live Project Demos`;
 
-      // Fetch GitHub profile & repos concurrently
+      // Fetch GitHub data
       const [profile, ghRepos] = await Promise.all([
-        GitHubAPI.getUserProfile(username).catch(err => {
-          console.warn('Profile fetch warning:', err);
-          return { login: username, name: username, bio: 'Developer & Creator', public_repos: 0 };
-        }),
-        GitHubAPI.getUserRepositories(username).catch(err => {
-          console.warn('Repositories fetch warning:', err);
-          return [];
-        })
+        GitHubAPI.getUserProfile(username).catch(() => ({
+          login: username, name: username, bio: 'Developer & Creator', public_repos: 7
+        })),
+        GitHubAPI.getUserRepositories(username).catch(() => [])
       ]);
 
-      // Render profile header
       this.renderProfile(profile, username);
 
-      // Merge and filter
+      // Merge GitHub repos with our live demo configs
       const merged = ConfigManager.mergeReposWithConfig(ghRepos, this.currentConfig);
-      // Keep only visible projects for public view
       this.allProjects = merged.filter(p => p.visible !== false);
+      this.filteredProjects = [...this.allProjects];
 
       // Populate filter dropdowns
       this.populateFilterOptions();
 
-      // Render language summary
-      this.renderLanguageSummary();
+      // Render Demo Arena with first project (default: Malaysia-Travel-Apps or banana-dashboard)
+      const defaultName = this.currentConfig.settings.defaultActiveDemo || 'Malaysia-Travel-Apps';
+      const initialDemo = this.allProjects.find(p => p.name === defaultName) || this.allProjects[0];
+      if (initialDemo) {
+        this.renderDemoArenaTabs();
+        this.loadDemoIntoArena(initialDemo);
+      }
 
-      // Render projects
-      this.applyFilters();
-      this.renderFeaturedProjects();
+      // Render cards
+      this.renderProjectsGrid();
 
     } catch (err) {
       console.error('Initialization error:', err);
-      this.showToast('Failed to load GitHub data. Please check connection.', 'error');
+      this.showToast('Could not load repositories from GitHub API.', 'error');
     }
   },
 
-  /**
-   * Render User Profile Header
-   */
   renderProfile(profile, username) {
     const avatarEl = document.getElementById('user-avatar');
     if (avatarEl) {
@@ -190,90 +166,173 @@ const App = {
 
     const bioEl = document.getElementById('user-bio');
     if (bioEl) {
-      bioEl.textContent = this.currentConfig.settings.bioOverride || profile.bio || 'Showcasing open-source projects, applications, and experiments.';
+      bioEl.textContent = this.currentConfig.settings.bioOverride || profile.bio || 'Interactive project portfolio featuring live web applications and mobile apps.';
     }
 
-    // Stats
+    const totalLiveDemos = this.allProjects.filter(p => p.hasLiveDemo).length;
     const totalReposEl = document.getElementById('stat-total-repos');
-    if (totalReposEl) totalReposEl.textContent = profile.public_repos || this.allProjects.length;
-
-    const githubLinkEl = document.getElementById('user-github-link');
-    if (githubLinkEl) githubLinkEl.href = profile.html_url || `https://github.com/${username}`;
+    if (totalReposEl) totalReposEl.textContent = `${totalLiveDemos} Live Demos`;
   },
 
   /**
-   * Render Featured / Pinned Projects Spotlight
+   * INTERACTIVE DEMO ARENA CONTROLS
    */
-  renderFeaturedProjects() {
-    const container = document.getElementById('featured-grid');
+  renderDemoArenaTabs() {
+    const container = document.getElementById('demo-selector-tabs');
     if (!container) return;
 
-    const featured = this.allProjects.filter(p => p.pinned);
-    const featuredSection = document.getElementById('featured-section');
+    // Show highlighted projects with demos or top pinned
+    const showcaseProjects = this.allProjects.slice(0, 5);
 
-    if (featured.length === 0) {
-      if (featuredSection) featuredSection.style.display = 'none';
-      return;
-    }
+    container.innerHTML = showcaseProjects.map(p => {
+      const icon = p.demoType === 'mobile' ? '📱' : '💻';
+      return `
+        <button class="demo-tab-btn ${p === this.activeDemoProject ? 'active' : ''}" data-repo="${p.name}">
+          <span>${icon}</span>
+          <span>${p.customTitle.split(' - ')[0]}</span>
+          ${p.hasLiveDemo ? '<span class="pulse-dot" style="margin-left:4px;"></span>' : ''}
+        </button>
+      `;
+    }).join('');
 
-    if (featuredSection) featuredSection.style.display = 'block';
-    container.innerHTML = featured.map(p => this.createFeaturedCardHTML(p)).join('');
-
-    // Attach card click handlers
-    container.querySelectorAll('.featured-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        // Prevent opening modal if clicking direct links
-        if (e.target.closest('a')) return;
-        const repoName = card.getAttribute('data-repo');
-        this.openProjectModal(repoName);
+    container.querySelectorAll('.demo-tab-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const repoName = e.currentTarget.getAttribute('data-repo');
+        const project = this.allProjects.find(p => p.name === repoName);
+        if (project) {
+          this.loadDemoIntoArena(project);
+        }
       });
     });
   },
 
-  createFeaturedCardHTML(project) {
-    const langColor = this.languageColors[project.language] || '#8b949e';
-    const coverHTML = project.coverImage
-      ? `<div class="featured-cover"><img src="${project.coverImage}" alt="${project.customTitle}" loading="lazy"></div>`
-      : `<div class="featured-cover"><div class="featured-cover-placeholder"><span>No Preview Cover</span></div></div>`;
+  loadDemoIntoArena(project) {
+    this.activeDemoProject = project;
 
-    const badgeHTML = project.badge ? `<div class="featured-badge">${project.badge}</div>` : '';
+    // Set device mode to project's preferred mode (e.g. mobile for Flutter app)
+    this.setDeviceMode(project.demoType || 'mobile', false);
 
-    const tagsHTML = (project.tags || []).slice(0, 4).map(t => `<span class="tag-pill">${t}</span>`).join('');
+    // Update active tab styling
+    document.querySelectorAll('.demo-tab-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.getAttribute('data-repo') === project.name);
+    });
 
-    const demoBtn = project.demoUrl
-      ? `<a href="${project.demoUrl}" target="_blank" rel="noopener" class="btn-primary" title="Live Demo">Live Demo</a>`
-      : '';
+    // Update arena info footer
+    document.getElementById('arena-project-title').textContent = project.customTitle;
+    document.getElementById('arena-project-desc').textContent = project.demoNote || project.customDescription;
 
-    return `
-      <div class="featured-card" data-repo="${project.name}">
-        ${coverHTML}
-        ${badgeHTML}
-        <div class="featured-body">
-          <div class="featured-title">
-            <span>${project.customTitle}</span>
-            <span style="display:inline-flex; align-items:center; gap:4px; font-size:0.8rem; font-weight:normal; color:var(--text-muted);">
-              <span class="lang-dot" style="background:${langColor};"></span>
-              ${project.language}
-            </span>
+    const tagsContainer = document.getElementById('arena-project-tags');
+    if (tagsContainer) {
+      tagsContainer.innerHTML = (project.tags || []).slice(0, 4).map(t => `<span class="tag-pill">${t}</span>`).join('');
+    }
+
+    const githubLink = document.getElementById('arena-github-link');
+    if (githubLink) githubLink.href = project.htmlUrl;
+
+    const demoUrlPill = document.getElementById('arena-url-display');
+    if (demoUrlPill) {
+      demoUrlPill.textContent = project.demoUrl || `simulated://${project.name}.app`;
+    }
+
+    // Render viewport content
+    const stage = document.getElementById('demo-viewport-stage');
+    if (!stage) return;
+
+    if (project.demoUrl) {
+      // Live iframe preview
+      if (this.activeDeviceMode === 'mobile') {
+        stage.innerHTML = `
+          <div class="phone-simulator-frame" id="simulator-frame">
+            <div class="phone-notch"><span class="phone-camera-lens"></span></div>
+            <div class="phone-screen">
+              <iframe id="active-demo-iframe" src="${project.demoUrl}" title="${project.customTitle}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+            </div>
           </div>
-          <p class="featured-desc">${project.customDescription}</p>
-          <div class="tags-row">${tagsHTML}</div>
-          <div class="card-actions">
-            ${demoBtn}
-            <a href="${project.htmlUrl}" target="_blank" rel="noopener" class="btn-secondary" title="View Source">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
-              </svg>
-              GitHub
-            </a>
+        `;
+      } else {
+        stage.innerHTML = `
+          <div class="desktop-simulator-frame" id="simulator-frame">
+            <div class="desktop-browser-bar">
+              <div class="browser-dots">
+                <span class="dot-red"></span>
+                <span class="dot-yellow"></span>
+                <span class="dot-green"></span>
+              </div>
+              <div class="browser-url-pill">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+                <span>${project.demoUrl}</span>
+              </div>
+            </div>
+            <div class="desktop-screen">
+              <iframe id="active-demo-iframe" src="${project.demoUrl}" title="${project.customTitle}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope;" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+            </div>
+          </div>
+        `;
+      }
+    } else {
+      // Simulated preview card for projects without a live hosted URL
+      stage.innerHTML = `
+        <div class="desktop-simulator-frame" id="simulator-frame" style="max-width:750px; min-height:450px;">
+          <div class="desktop-browser-bar">
+            <div class="browser-dots">
+              <span class="dot-red"></span>
+              <span class="dot-yellow"></span>
+              <span class="dot-green"></span>
+            </div>
+            <div class="browser-url-pill">
+              <span>preview://${project.name}</span>
+            </div>
+          </div>
+          <div class="simulator-mock-view">
+            <div style="font-size:3rem; margin-bottom:1rem;">🚀</div>
+            <h3 style="font-size:1.4rem; font-weight:700; margin-bottom:0.5rem;">${project.customTitle}</h3>
+            <p style="color:var(--text-muted); max-width:500px; margin-bottom:1.5rem; line-height:1.6;">
+              ${project.customDescription}
+            </p>
+            <div style="display:flex; gap:0.75rem;">
+              <a href="${project.htmlUrl}" target="_blank" rel="noopener" class="btn-primary">
+                View Source Code on GitHub &rarr;
+              </a>
+            </div>
           </div>
         </div>
-      </div>
-    `;
+      `;
+    }
+  },
+
+  setDeviceMode(mode, reload = true) {
+    this.activeDeviceMode = mode;
+    document.getElementById('device-mobile-btn')?.classList.toggle('active', mode === 'mobile');
+    document.getElementById('device-desktop-btn')?.classList.toggle('active', mode === 'desktop');
+
+    if (reload && this.activeDemoProject) {
+      this.loadDemoIntoArena(this.activeDemoProject);
+    }
+  },
+
+  reloadActiveDemo() {
+    const iframe = document.getElementById('active-demo-iframe');
+    if (iframe && this.activeDemoProject && this.activeDemoProject.demoUrl) {
+      iframe.src = this.activeDemoProject.demoUrl;
+      this.showToast('Reloaded live demo session', 'info');
+    }
+  },
+
+  toggleArenaFullscreen() {
+    const stage = document.getElementById('simulator-frame');
+    if (!stage) return;
+    if (!document.fullscreenElement) {
+      stage.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
   },
 
   /**
-   * Render All Repositories Grid
+   * PROJECTS GRID (DEMO-FIRST CARDS)
    */
   renderProjectsGrid() {
     const container = document.getElementById('projects-grid');
@@ -281,289 +340,163 @@ const App = {
     if (!container) return;
 
     if (countEl) {
-      countEl.textContent = `Showing ${this.filteredProjects.length} of ${this.allProjects.length} projects`;
+      countEl.textContent = `Showing ${this.filteredProjects.length} projects`;
     }
 
     if (this.filteredProjects.length === 0) {
       container.innerHTML = `
-        <div class="empty-state" style="grid-column: 1 / -1;">
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-            <circle cx="11" cy="11" r="8"></circle>
-            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-          </svg>
-          <h3>No projects match your filter</h3>
-          <p>Try searching for a different keyword or reset filters.</p>
+        <div style="grid-column: 1 / -1; text-align:center; padding:3rem 1rem; color:var(--text-muted);">
+          <h3>No matching projects found</h3>
+          <p>Try searching for a different keyword or resetting filters.</p>
         </div>
       `;
       return;
     }
 
-    container.className = `projects-grid ${this.activeView === 'list' ? 'list-view' : ''}`;
-    container.innerHTML = this.filteredProjects.map(p => this.createRepoCardHTML(p)).join('');
+    container.innerHTML = this.filteredProjects.map(p => this.createDemoCardHTML(p)).join('');
 
-    // Attach card click handlers
-    container.querySelectorAll('.repo-card').forEach(card => {
-      card.addEventListener('click', (e) => {
-        if (e.target.closest('a')) return;
-        const repoName = card.getAttribute('data-repo');
+    // Attach card action listeners
+    container.querySelectorAll('.launch-demo-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const repoName = e.currentTarget.getAttribute('data-repo');
+        const project = this.allProjects.find(p => p.name === repoName);
+        if (project) {
+          // Load directly into top Arena and scroll smoothly to it
+          this.loadDemoIntoArena(project);
+          document.getElementById('demo-arena-section')?.scrollIntoView({ behavior: 'smooth' });
+          this.showToast(`Loaded "${project.customTitle}" into Live Arena!`, 'success');
+        }
+      });
+    });
+
+    container.querySelectorAll('.view-details-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const repoName = e.currentTarget.getAttribute('data-repo');
         this.openProjectModal(repoName);
       });
     });
   },
 
-  createRepoCardHTML(project) {
-    const langColor = this.languageColors[project.language] || '#8b949e';
-    const updatedDate = new Date(project.updatedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
-    const isPinnedBadge = project.pinned ? `<span class="badge-pill pinned">★ Pinned</span>` : '';
+  createDemoCardHTML(project) {
+    const liveIndicator = project.hasLiveDemo
+      ? `<span class="live-pill banner-live-indicator"><span class="pulse-dot"></span> Live Demo Ready</span>`
+      : '';
+
+    const badgeHTML = project.badge
+      ? `<span class="banner-overlay-badge">${project.badge}</span>`
+      : '';
+
+    const coverHTML = project.coverImage
+      ? `<img src="${project.coverImage}" alt="${project.customTitle}" loading="lazy">`
+      : `<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg, rgba(56,139,253,0.15), rgba(188,140,255,0.15)); font-weight:700; color:var(--text-muted);">${project.language || 'Code'}</div>`;
+
+    const tagsHTML = (project.tags || []).slice(0, 3).map(t => `<span class="tag-pill">${t}</span>`).join('');
+
+    const primaryActionBtn = project.hasLiveDemo
+      ? `<button class="btn-primary launch-demo-btn" data-repo="${project.name}">
+           <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+           Play Demo
+         </button>`
+      : `<button class="btn-primary launch-demo-btn" data-repo="${project.name}" style="background:var(--bg-surface-elevated); color:var(--text-main); border:1px solid var(--border-color);">
+           Interactive Preview
+         </button>`;
 
     return `
-      <div class="repo-card" data-repo="${project.name}">
-        <div>
-          <div class="repo-header">
-            <h3 class="repo-title">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
-                <path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-.714 1.7.75.75 0 1 1-1.072 1.05A2.495 2.495 0 0 1 2 11.5v-9zm10.5-1V9h-8c-.356 0-.694.074-1 .208V2.5a1 1 0 0 1 1-1h8zM5 12.25v3.25a.25.25 0 0 0 .4.2l1.45-1.087a.25.25 0 0 1 .3 0L8.6 15.7a.25.25 0 0 0 .4-.2v-3.25a.25.25 0 0 0-.25-.25h-3.5a.25.25 0 0 0-.25.25z"/>
-              </svg>
-              ${project.customTitle}
-            </h3>
-            <div class="repo-badges">
-              ${isPinnedBadge}
-            </div>
-          </div>
-          <p class="repo-desc">${project.customDescription}</p>
+      <div class="demo-card" data-repo="${project.name}">
+        <div class="card-banner-wrapper">
+          ${coverHTML}
+          ${liveIndicator}
+          ${badgeHTML}
         </div>
-        <div class="repo-meta">
-          <span class="meta-item">
-            <span class="lang-dot" style="background:${langColor};"></span>
-            ${project.language}
-          </span>
-          <span class="meta-item">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M8 .25a.75.75 0 0 1 .673.418l1.882 3.815 4.21.612a.75.75 0 0 1 .416 1.279l-3.046 2.97.719 4.192a.75.75 0 0 1-1.088.791L8 12.347l-3.766 1.98a.75.75 0 0 1-1.088-.79l.72-4.194L.818 6.374a.75.75 0 0 1 .416-1.28l4.21-.611L7.327.668A.75.75 0 0 1 8 .25z"/>
-            </svg>
-            ${project.stars}
-          </span>
-          <span class="meta-item">
-            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor">
-              <path d="M5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm0 2.122a2.25 2.25 0 1 0-1.5 0v.878A2.25 2.25 0 0 0 5.75 8.5h4.5A2.25 2.25 0 0 0 12.5 6.25v-.878a2.25 2.25 0 1 0-1.5 0V6.25a.75.75 0 0 1-.75.75h-4.5A.75.75 0 0 1 5 6.25v-.878zM12.5 3.25a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zM5 12.75a.75.75 0 1 1-1.5 0 .75.75 0 0 1 1.5 0zm0 2.122a2.25 2.25 0 1 0-1.5 0V11a2.25 2.25 0 0 0 2.25-2.25h.5a.75.75 0 0 1 0 1.5h-.5A.75.75 0 0 0 5 11v3.872z"/>
-            </svg>
-            ${project.forks}
-          </span>
-          <span class="meta-item" style="margin-left: auto;">Updated ${updatedDate}</span>
+        <div class="card-body">
+          <div class="card-title-row">
+            <h3 class="card-title">${project.customTitle}</h3>
+          </div>
+          <p class="card-desc">${project.customDescription}</p>
+          <div class="tags-row">${tagsHTML}</div>
+          <div class="card-footer-actions">
+            ${primaryActionBtn}
+            <button class="btn-secondary view-details-btn" data-repo="${project.name}">
+              Details &amp; Code
+            </button>
+          </div>
         </div>
       </div>
     `;
   },
 
-  /**
-   * Filter and Sort Logic
-   */
   applyFilters() {
     const searchVal = document.getElementById('search-input')?.value.toLowerCase().trim() || '';
     const langVal = document.getElementById('language-filter')?.value || 'all';
-    const tagVal = document.getElementById('tag-filter')?.value || 'all';
-    const sortVal = document.getElementById('sort-select')?.value || 'updated';
+    const demoOnly = document.getElementById('demo-filter')?.value === 'demo_only';
 
     this.filteredProjects = this.allProjects.filter(p => {
-      // Text search
-      const matchesSearch = !searchVal || 
+      const matchSearch = !searchVal ||
         p.customTitle.toLowerCase().includes(searchVal) ||
         p.name.toLowerCase().includes(searchVal) ||
         p.customDescription.toLowerCase().includes(searchVal) ||
         (p.tags && p.tags.some(t => t.toLowerCase().includes(searchVal)));
 
-      // Language filter
-      const matchesLang = langVal === 'all' || p.language === langVal;
+      const matchLang = langVal === 'all' || p.language === langVal;
+      const matchDemo = !demoOnly || p.hasLiveDemo;
 
-      // Tag filter
-      const matchesTag = tagVal === 'all' || (p.tags && p.tags.includes(tagVal));
-
-      return matchesSearch && matchesLang && matchesTag;
-    });
-
-    // Sort
-    this.filteredProjects.sort((a, b) => {
-      if (sortVal === 'stars') return b.stars - a.stars;
-      if (sortVal === 'name') return a.customTitle.localeCompare(b.customTitle);
-      if (sortVal === 'size') return b.sizeKb - a.sizeKb;
-      // Default: updated
-      return new Date(b.updatedAt) - new Date(a.updatedAt);
+      return matchSearch && matchLang && matchDemo;
     });
 
     this.renderProjectsGrid();
   },
 
-  /**
-   * Switch View Mode (Grid vs List)
-   */
-  setView(mode) {
-    this.activeView = mode;
-    document.getElementById('view-grid-btn')?.classList.toggle('active', mode === 'grid');
-    document.getElementById('view-list-btn')?.classList.toggle('active', mode === 'list');
-    this.renderProjectsGrid();
-  },
-
-  /**
-   * Populate Language & Tag Filter Dropdowns
-   */
   populateFilterOptions() {
     const langSelect = document.getElementById('language-filter');
-    const tagSelect = document.getElementById('tag-filter');
-
     if (langSelect) {
       const languages = Array.from(new Set(this.allProjects.map(p => p.language).filter(Boolean))).sort();
-      langSelect.innerHTML = '<option value="all">All Languages</option>' +
+      langSelect.innerHTML = '<option value="all">All Tech Stacks</option>' +
         languages.map(l => `<option value="${l}">${l}</option>`).join('');
     }
-
-    if (tagSelect) {
-      const tags = Array.from(new Set(this.allProjects.flatMap(p => p.tags || []).filter(Boolean))).sort();
-      tagSelect.innerHTML = '<option value="all">All Tags</option>' +
-        tags.map(t => `<option value="${t}">${t}</option>`).join('');
-    }
   },
 
-  /**
-   * Render Language Distribution Summary Bar
-   */
-  renderLanguageSummary() {
-    const bar = document.getElementById('lang-progress-bar');
-    const legend = document.getElementById('lang-legend');
-    if (!bar || !legend) return;
-
-    const counts = {};
-    let total = 0;
-    this.allProjects.forEach(p => {
-      if (p.language) {
-        counts[p.language] = (counts[p.language] || 0) + 1;
-        total++;
-      }
-    });
-
-    if (total === 0) return;
-
-    const sortedLangs = Object.entries(counts).sort((a, b) => b[1] - a[1]);
-
-    // Progress Bar
-    bar.innerHTML = sortedLangs.map(([lang, count]) => {
-      const pct = ((count / total) * 100).toFixed(1);
-      const color = this.languageColors[lang] || '#8b949e';
-      return `<div class="lang-progress-segment" style="width: ${pct}%; background: ${color};" title="${lang}: ${pct}%"></div>`;
-    }).join('');
-
-    // Legend
-    legend.innerHTML = sortedLangs.map(([lang, count]) => {
-      const pct = ((count / total) * 100).toFixed(1);
-      const color = this.languageColors[lang] || '#8b949e';
-      return `
-        <div class="lang-legend-item">
-          <span class="lang-dot" style="background:${color};"></span>
-          <span><strong>${lang}</strong> ${pct}%</span>
-        </div>
-      `;
-    }).join('');
-  },
-
-  /**
-   * Open Project Detail Modal
-   */
-  async openProjectModal(repoName) {
+  openProjectModal(repoName) {
     const project = this.allProjects.find(p => p.name === repoName);
     if (!project) return;
-    this.activeProject = project;
 
     const modal = document.getElementById('project-modal');
     if (!modal) return;
 
-    // Header info
-    document.getElementById('modal-repo-name').textContent = project.customTitle;
-    const githubLink = document.getElementById('modal-github-link');
-    if (githubLink) githubLink.href = project.htmlUrl;
-
-    const demoLink = document.getElementById('modal-demo-link');
-    if (demoLink) {
-      if (project.demoUrl) {
-        demoLink.href = project.demoUrl;
-        demoLink.style.display = 'inline-flex';
-      } else {
-        demoLink.style.display = 'none';
-      }
-    }
-
-    // Clone command
-    const cloneCode = document.getElementById('modal-clone-code');
-    if (cloneCode) {
-      cloneCode.textContent = `git clone ${project.htmlUrl}.git`;
-    }
-    const copyBtn = document.getElementById('modal-copy-clone-btn');
-    if (copyBtn) {
-      copyBtn.onclick = () => {
-        navigator.clipboard.writeText(`git clone ${project.htmlUrl}.git`);
-        this.showToast('Clone command copied to clipboard!', 'success');
-      };
-    }
-
-    // Populate Overview Tab
+    document.getElementById('modal-title-text').textContent = project.customTitle;
     document.getElementById('modal-desc').textContent = project.customDescription;
+
     const tagsContainer = document.getElementById('modal-tags');
     if (tagsContainer) {
       tagsContainer.innerHTML = (project.tags || []).map(t => `<span class="tag-pill">${t}</span>`).join('');
     }
 
-    document.getElementById('modal-stat-stars').textContent = project.stars;
-    document.getElementById('modal-stat-forks').textContent = project.forks;
-    document.getElementById('modal-stat-watchers').textContent = project.watchers;
-    document.getElementById('modal-stat-branch').textContent = project.defaultBranch;
-    document.getElementById('modal-stat-updated').textContent = new Date(project.updatedAt).toLocaleDateString();
+    const githubLink = document.getElementById('modal-github-link');
+    if (githubLink) githubLink.href = project.htmlUrl;
 
-    // Default to overview tab
-    this.switchModalTab('overview');
+    const demoBtn = document.getElementById('modal-demo-btn');
+    if (demoBtn) {
+      if (project.demoUrl) {
+        demoBtn.style.display = 'inline-flex';
+        demoBtn.onclick = () => {
+          this.closeModal();
+          this.loadDemoIntoArena(project);
+          document.getElementById('demo-arena-section')?.scrollIntoView({ behavior: 'smooth' });
+        };
+      } else {
+        demoBtn.style.display = 'none';
+      }
+    }
 
-    // Show modal
     modal.classList.add('active');
     document.body.style.overflow = 'hidden';
-
-    // Lazy load README in the background
-    this.loadModalReadme(project);
   },
 
   closeModal() {
     const modal = document.getElementById('project-modal');
     if (modal) modal.classList.remove('active');
     document.body.style.overflow = '';
-    this.activeProject = null;
   },
 
-  switchModalTab(tabId) {
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-      btn.classList.toggle('active', btn.getAttribute('data-tab') === tabId);
-    });
-    document.querySelectorAll('.tab-pane').forEach(pane => {
-      pane.style.display = pane.id === `tab-${tabId}` ? 'block' : 'none';
-    });
-  },
-
-  async loadModalReadme(project) {
-    const readmeContainer = document.getElementById('modal-readme-content');
-    if (!readmeContainer) return;
-
-    readmeContainer.innerHTML = '<p style="color:var(--text-muted);">Fetching README documentation from GitHub...</p>';
-
-    const username = this.currentConfig.settings.githubUsername || 'ChingKheat';
-    const readmeText = await GitHubAPI.getRepoReadme(username, project.name);
-
-    if (readmeText && window.marked) {
-      readmeContainer.innerHTML = window.marked.parse(readmeText);
-    } else if (readmeText) {
-      readmeContainer.innerText = readmeText;
-    } else {
-      readmeContainer.innerHTML = '<p style="color:var(--text-dim); font-style:italic;">No README.md found in this repository.</p>';
-    }
-  },
-
-  /**
-   * Toast notification helper
-   */
   showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -577,7 +510,7 @@ const App = {
       toast.style.opacity = '0';
       toast.style.transition = 'opacity 0.3s ease';
       setTimeout(() => toast.remove(), 300);
-    }, 3500);
+    }, 3200);
   }
 };
 
