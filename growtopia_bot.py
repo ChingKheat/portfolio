@@ -310,24 +310,54 @@ async def cmd_item(ctx, *, query: str = None):
         await ctx.send(embed=embed)
 
 @bot.command(name="diff", aliases=["changelog", "changes"])
-async def cmd_diff(ctx):
+async def cmd_diff(ctx, *, patch_name: str = "latest"):
+    """
+    Shows patch diffs and changelogs.
+    Options:
+    - !diff (or !diff latest / !diff oct) -> Shows October 5, 2026 (v5.59) changelog (+120 items)
+    - !diff previous (or !diff sep / !diff 5.58) -> Shows September 2026 (v5.58) changelog (+114 items)
+    - !diff live -> Checks live local game files against baseline snapshot
+    """
     if not ITEMS_CACHE:
         refresh_items()
 
-    snapshot = load_snapshot()
-    if not snapshot:
-        save_snapshot(ITEMS_CACHE)
-        await ctx.send("ℹ️ No previous baseline found. Current database saved as the baseline snapshot!")
-        return
+    target = patch_name.strip().lower()
 
-    diff = generate_items_diff(snapshot, ITEMS_CACHE)
+    if target in ["live", "current", "now"]:
+        snapshot = load_snapshot()
+        if not snapshot:
+            save_snapshot(ITEMS_CACHE)
+            await ctx.send("ℹ️ No previous baseline found. Current database saved as the baseline snapshot!")
+            return
+
+        diff = generate_items_diff(snapshot, ITEMS_CACHE)
+        title = "📊 Growtopia Live Watcher Diff"
+        desc_header = "Comparing live game files right now against baseline snapshot:\n"
+        patch_info = "Live PC Watcher"
+    elif target in ["previous", "sep", "september", "5.58", "v5.58", "old"]:
+        # September 2026 patch: IDs #16200 to #16313
+        old_items = ITEMS_CACHE[:16200]
+        new_items = ITEMS_CACHE[:16314]
+        diff = generate_items_diff(old_items, new_items)
+        title = "📊 Growtopia September 2026 Patch Diff (v5.58)"
+        desc_header = "Changelog for the **September 2026 Update** (IDs `#16200` – `#16313`):\n"
+        patch_info = "Patch v5.58 (September 2026)"
+    else:
+        # Default: Latest October 5, 2026 update (IDs #16314 to #16433)
+        old_items = ITEMS_CACHE[:16314]
+        new_items = ITEMS_CACHE[:16434]
+        diff = generate_items_diff(old_items, new_items)
+        title = "📊 Growtopia Latest Patch Diff (v5.59 — October 5, 2026)"
+        desc_header = "Changelog for the **October 5, 2026 Clash Season Update** (IDs `#16314` – `#16433`):\n"
+        patch_info = "Patch v5.59 (October 5, 2026)"
+
     added = diff["added"]
     modified = diff["modified"]
 
     embed = discord.Embed(
-        title="📊 Growtopia Patch Diff & Changelog",
+        title=title,
         description=(
-            f"Comparing active game files against baseline snapshot:\n\n"
+            f"{desc_header}\n"
             f"• **🆕 New Items Added:** `{len(added)}`\n"
             f"• **🔄 Items Rebalanced / Modified:** `{len(modified)}`\n"
             f"• **📦 Total Database:** `{len(ITEMS_CACHE):,}` items (v{ITEMS_VERSION})\n"
@@ -338,11 +368,16 @@ async def cmd_diff(ctx):
     if added:
         top_added = [
             f"• `#{it['id']}` **{it['name']}** (Rarity `{it['rarity']}`)"
-            for it in added[:12] if not it['name'].endswith('Seed')
-        ]
+            for it in added if not it['name'].endswith('Seed') and 'null_item' not in it['name']
+        ][:12]
+        unreleased_count = sum(1 for it in added if 'null_item' in it['name'])
+        added_text = "\n".join(top_added)
+        if unreleased_count > 0:
+            added_text += f"\n• *...plus `{unreleased_count}` unreleased event placeholder items!*"
+
         embed.add_field(
-            name=f"✨ New Additions ({len(added)})",
-            value="\n".join(top_added) if top_added else f"{len(added)} new items",
+            name=f"✨ Key New Additions ({len(added)} total)",
+            value=added_text if top_added else f"{len(added)} new items",
             inline=False
         )
 
@@ -359,7 +394,7 @@ async def cmd_diff(ctx):
     if not added and not modified:
         embed.description += "\n✨ **Everything matches! Zero unannounced changes or file modifications.**"
 
-    embed.set_footer(text=f"Prefix: {PREFIX} • Type !latest to see categorized items directory")
+    embed.set_footer(text=f"{patch_info} • Options: !diff latest, !diff previous, !diff live")
     await ctx.send(embed=embed)
 
 @bot.command(name="check")
