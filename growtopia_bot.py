@@ -73,10 +73,10 @@ def refresh_items():
 
 GROWTOPIA_EXE = os.path.join(DEFAULT_GT_PATH, "Growtopia.exe")
 
-async def perform_silent_sync():
+async def perform_silent_sync(max_seconds=5):
     """
-    Silently launches Growtopia minimized in the background for 12 seconds
-    to download any server maintenance items.dat hotfixes without user interaction.
+    Silently launches Growtopia minimized in the background for 4-5 seconds
+    (or closes immediately as soon as items.dat updates).
     """
     if not os.path.exists(GROWTOPIA_EXE):
         return False, "Growtopia.exe not found in local directory."
@@ -95,25 +95,34 @@ async def perform_silent_sync():
     startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     startupinfo.wShowWindow = 6  # SW_MINIMIZE
 
+    old_mtime = os.path.getmtime(ITEMS_DAT_PATH) if os.path.exists(ITEMS_DAT_PATH) else 0
+
     try:
         proc = subprocess.Popen([GROWTOPIA_EXE], startupinfo=startupinfo)
-        await asyncio.sleep(12)
+        # Check every 0.5s up to max_seconds (default 5s max)
+        steps = int(max_seconds * 2)
+        for _ in range(steps):
+            await asyncio.sleep(0.5)
+            # If items.dat updated, finish immediately!
+            if os.path.exists(ITEMS_DAT_PATH) and os.path.getmtime(ITEMS_DAT_PATH) != old_mtime:
+                break
+
         proc.terminate()
         try:
-            proc.wait(timeout=3)
+            proc.wait(timeout=2)
         except Exception:
             proc.kill()
         return True, "Sync completed successfully."
     except Exception as e:
         return False, f"Error during silent sync: {e}"
 
-@tasks.loop(hours=4)
+@tasks.loop(hours=2)
 async def auto_hotfix_sync_loop():
-    """Periodically checks for silent server maintenance hotfixes in the background."""
+    """Periodically checks for silent server maintenance hotfixes in the background every 2 hours."""
     if not WATCHER_ENABLED:
         return
-    print("[Auto-Hotfix] Starting scheduled 4-hour background game sync...")
-    success, msg = await perform_silent_sync()
+    print("[Auto-Hotfix] Starting scheduled 2-hour background game sync...")
+    success, msg = await perform_silent_sync(max_seconds=5)
     print(f"[Auto-Hotfix] Result: {msg}")
 
 @bot.event
@@ -471,10 +480,10 @@ async def cmd_check(ctx):
 
 @bot.command(name="sync", aliases=["fetch", "hotfix"])
 async def cmd_sync(ctx):
-    status_msg = await ctx.send("🔄 **Syncing with Ubisoft servers...** Checking for silent maintenance hotfixes in the background (12s)...")
+    status_msg = await ctx.send("⚡ **Fast-syncing with Ubisoft servers...** Checking in the background (4-5s)...")
     old_mtime = os.path.getmtime(ITEMS_DAT_PATH) if os.path.exists(ITEMS_DAT_PATH) else 0
 
-    success, msg = await perform_silent_sync()
+    success, msg = await perform_silent_sync(max_seconds=5)
     if not success:
         await status_msg.edit(content=f"⚠️ {msg}")
         return
