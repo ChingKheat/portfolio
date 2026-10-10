@@ -252,6 +252,67 @@ def convert_rttex(rttex_path, output_png_path):
     img.save(output_png_path)
     return w, h
 
+BODY_PART_MAP = {
+    0: "None / Block",
+    1: "Shirt / Chest",
+    2: "Pants",
+    3: "Shoes / Feet",
+    4: "Face / Mask",
+    5: "Hand / Weapon",
+    6: "Back / Wings",
+    7: "Hair / Hat",
+    8: "Chest Accessory",
+    9: "Ances / Charm"
+}
+
+def get_item_icon(texture_file, tex_x, tex_y, item_id, output_dir=SCRIPT_DIR):
+    """
+    Crops and upscales a crystal-clear 128x128 single item icon from the game's sprite sheet.
+    """
+    if not texture_file:
+        return None
+
+    icons_dir = os.path.join(output_dir, "icons")
+    os.makedirs(icons_dir, exist_ok=True)
+    out_path = os.path.join(icons_dir, f"item_{item_id}.png")
+
+    if os.path.exists(out_path):
+        return out_path
+
+    sheet_rttex = os.path.join(GAME_DIR, texture_file)
+    if not os.path.exists(sheet_rttex):
+        return None
+
+    sheet_png = os.path.join(output_dir, texture_file.replace(".rttex", ".png"))
+    if not os.path.exists(sheet_png):
+        try:
+            convert_rttex(sheet_rttex, sheet_png)
+        except Exception:
+            return None
+
+    if not os.path.exists(sheet_png):
+        return None
+
+    try:
+        img = Image.open(sheet_png)
+        w, h = img.size
+        tile_size = 32
+
+        left = tex_x * tile_size
+        top = tex_y * tile_size
+        right = left + tile_size
+        bottom = top + tile_size
+
+        if right <= w and bottom <= h:
+            cropped = img.crop((left, top, right, bottom))
+            scaled = cropped.resize((128, 128), Image.Resampling.NEAREST)
+            scaled.save(out_path)
+            return out_path
+    except Exception as e:
+        print(f"Error cropping icon for item #{item_id}: {e}")
+
+    return None
+
 def send_discord_webhook(title, description, fields=None, image_path=None, color=0x2ecc71):
     payload = {
         "username": "Growtopia Dataminer",

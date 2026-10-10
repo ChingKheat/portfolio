@@ -34,6 +34,8 @@ sys.path.append(SCRIPT_DIR)
 from growtopia_miner import (
     parse_itemsdat,
     convert_rttex,
+    get_item_icon,
+    BODY_PART_MAP,
     generate_items_diff,
     save_snapshot,
     load_snapshot,
@@ -91,7 +93,6 @@ async def cmd_help(ctx):
     )
     embed.add_field(name=f"`{PREFIX}start`", value="Activate real-time auto-watching and send the latest items here!", inline=False)
     embed.add_field(name=f"`{PREFIX}diff`", value="Show the patch changelog (new & modified/rebalanced items).", inline=False)
-    embed.add_field(name=f"`{PREFIX}guild`", value="Inspect Guild Flag shapes, shields, and logo sprite sheets.", inline=False)
     embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game items from the latest patch.", inline=False)
     embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16428`).", inline=False)
     embed.add_field(name=f"`{PREFIX}check`", value="Check if a new game update is available right now.", inline=False)
@@ -273,8 +274,14 @@ async def cmd_item(ctx, *, query: str = None):
         color=0x2ecc71
     )
     embed.add_field(name="Rarity", value=f"`{item['rarity']}`", inline=True)
-    embed.add_field(name="Texture File", value=f"`{item['texture']}`", inline=True)
-    
+
+    # Wearable slot / Body part
+    slot = BODY_PART_MAP.get(item.get("body_part", 0), "None / Block")
+    if slot != "None / Block":
+        embed.add_field(name="Wearable Slot", value=f"`{slot}`", inline=True)
+    elif item.get("break_hits", 0) > 0:
+        embed.add_field(name="Hardness", value=f"`{item['break_hits']} hits`", inline=True)
+
     # Release date estimation based on ID ranges
     if item['id'] >= 16314:
         embed.add_field(name="Release Date", value="`October 5, 2026 (v5.59)`", inline=True)
@@ -285,6 +292,8 @@ async def cmd_item(ctx, *, query: str = None):
 
     if item.get("grow_time"):
         embed.add_field(name="Grow Time", value=f"{item['grow_time']}s", inline=True)
+    embed.add_field(name="Texture Sheet", value=f"`{item['texture']}`", inline=True)
+
     if item.get("info"):
         embed.add_field(name="Description", value=item["info"], inline=False)
 
@@ -292,18 +301,20 @@ async def cmd_item(ctx, *, query: str = None):
         other_names = ", ".join([f"`{m['name']}`" for m in matches[1:]])
         embed.add_field(name="Other Matches", value=other_names, inline=False)
 
-    # Try to convert and attach texture if it exists
-    tex_file = item["texture"]
+    # Generate crystal-clear 128x128 single item icon thumbnail
+    icon_path = get_item_icon(
+        item.get("texture"),
+        item.get("tex_x", 0),
+        item.get("tex_y", 0),
+        item["id"]
+    )
+
     attached_file = None
-    if tex_file:
-        rttex_path = os.path.join(GAME_DIR, tex_file)
-        if os.path.exists(rttex_path):
-            out_png = os.path.join(SCRIPT_DIR, tex_file.replace(".rttex", ".png"))
-            if not os.path.exists(out_png):
-                convert_rttex(rttex_path, out_png)
-            if os.path.exists(out_png):
-                attached_file = discord.File(out_png, filename=os.path.basename(out_png))
-                embed.set_image(url=f"attachment://{os.path.basename(out_png)}")
+    if icon_path and os.path.exists(icon_path):
+        attached_file = discord.File(icon_path, filename=os.path.basename(icon_path))
+        embed.set_thumbnail(url=f"attachment://{os.path.basename(icon_path)}")
+
+    embed.set_footer(text=f"Grid: X={item.get('tex_x', 0)}, Y={item.get('tex_y', 0)} • Type !texture {item['texture']} for full sprite sheet")
 
     if attached_file:
         await ctx.send(embed=embed, file=attached_file)
@@ -397,46 +408,6 @@ async def cmd_diff(ctx, *, patch_name: str = "latest"):
 
     embed.set_footer(text=f"{patch_info} • Options: !diff latest, !diff previous, !diff live")
     await ctx.send(embed=embed)
-
-@bot.command(name="guild", aliases=["guilds", "guildlogo", "guildflag"])
-async def cmd_guild(ctx, *, query: str = "1"):
-    """Shows Guild Flag and Logo sprite sheets and items."""
-    query_clean = query.strip().lower()
-
-    if query_clean in ["1", "2", "3", "logo", "logos", "flag", "flags", "default"]:
-        page_num = "1" if query_clean in ["1", "logo", "logos", "flag", "flags", "default"] else query_clean
-        tex_name = f"gd_page{page_num}.rttex"
-        png_name = f"gd_page{page_num}.png"
-        rttex_path = os.path.join(GAME_DIR, tex_name)
-        png_path = os.path.join(SCRIPT_DIR, png_name)
-
-        if not os.path.exists(png_path) and os.path.exists(rttex_path):
-            try:
-                convert_rttex(rttex_path, png_path)
-            except Exception as e:
-                print(f"Error converting {tex_name}: {e}")
-
-        embed = discord.Embed(
-            title=f"🛡️ Growtopia Guild Flag & Logo Designs (Sheet {page_num})",
-            description=(
-                f"Contains the official **Guild Flag Shapes, Emblems, and Patterns**!\n\n"
-                f"• **Shapes:** Shield, Arrow, Wave, Peak, Banner\n"
-                f"• **Patterns:** Flame, Harlequin, Plaid, Cross, Slant, Filigree, Division\n"
-                f"• **Texture Sheet:** `{tex_name}`\n"
-            ),
-            color=0xf1c40f
-        )
-        embed.set_footer(text=f"Try: !guild 1, !guild 2, !guild 3, or !item Guild Flag - Shield")
-
-        if os.path.exists(png_path):
-            file = discord.File(png_path, filename=png_name)
-            embed.set_image(url=f"attachment://{png_name}")
-            await ctx.send(embed=embed, file=file)
-        else:
-            await ctx.send(embed=embed)
-    else:
-        # Search guild flag item directly
-        await cmd_item(ctx, query=f"Guild Flag {query}")
 
 @bot.command(name="check")
 async def cmd_check(ctx):
