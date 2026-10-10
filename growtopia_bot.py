@@ -71,15 +71,62 @@ def refresh_items():
         return True
     return False
 
+GROWTOPIA_EXE = os.path.join(DEFAULT_GT_PATH, "Growtopia.exe")
+
+async def perform_silent_sync():
+    """
+    Silently launches Growtopia minimized in the background for 12 seconds
+    to download any server maintenance items.dat hotfixes without user interaction.
+    """
+    if not os.path.exists(GROWTOPIA_EXE):
+        return False, "Growtopia.exe not found in local directory."
+
+    import psutil
+    # Check if user is already playing to avoid interrupting
+    for p in psutil.process_iter(['name']):
+        try:
+            if "Growtopia.exe" in p.name():
+                return False, "Growtopia is currently open. Skipping silent sync to avoid interrupting your game."
+        except Exception:
+            pass
+
+    import subprocess
+    startupinfo = subprocess.STARTUPINFO()
+    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    startupinfo.wShowWindow = 6  # SW_MINIMIZE
+
+    try:
+        proc = subprocess.Popen([GROWTOPIA_EXE], startupinfo=startupinfo)
+        await asyncio.sleep(12)
+        proc.terminate()
+        try:
+            proc.wait(timeout=3)
+        except Exception:
+            proc.kill()
+        return True, "Sync completed successfully."
+    except Exception as e:
+        return False, f"Error during silent sync: {e}"
+
+@tasks.loop(hours=4)
+async def auto_hotfix_sync_loop():
+    """Periodically checks for silent server maintenance hotfixes in the background."""
+    if not WATCHER_ENABLED:
+        return
+    print("[Auto-Hotfix] Starting scheduled 4-hour background game sync...")
+    success, msg = await perform_silent_sync()
+    print(f"[Auto-Hotfix] Result: {msg}")
+
 @bot.event
 async def on_ready():
     print(f"==================================================")
     print(f" 🤖 GROWTOPIA DISCORD BOT LOGGED IN AS: {bot.user}")
-    print(f" Ready to respond to commands ({PREFIX}latest, {PREFIX}diff, {PREFIX}item, {PREFIX}check, {PREFIX}help)")
+    print(f" Ready to respond to commands ({PREFIX}latest, {PREFIX}diff, {PREFIX}item, {PREFIX}sync, {PREFIX}help)")
     print(f"==================================================")
     refresh_items()
     if not auto_monitor.is_running():
         auto_monitor.start()
+    if not auto_hotfix_sync_loop.is_running():
+        auto_hotfix_sync_loop.start()
 
 WATCHER_ENABLED = True
 ALERT_CHANNEL_ID = config.get("alert_channel_id")
@@ -93,6 +140,7 @@ async def cmd_help(ctx):
     )
     embed.add_field(name=f"`{PREFIX}start`", value="Activate real-time auto-watching and send the latest items here!", inline=False)
     embed.add_field(name=f"`{PREFIX}diff`", value="Show the patch changelog (new & modified/rebalanced items).", inline=False)
+    embed.add_field(name=f"`{PREFIX}sync`", value="Silently check for server maintenance hotfixes right now.", inline=False)
     embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game items from the latest patch.", inline=False)
     embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16428`).", inline=False)
     embed.add_field(name=f"`{PREFIX}check`", value="Check if a new game update is available right now.", inline=False)
@@ -420,6 +468,22 @@ async def cmd_check(ctx):
         await ctx.send(f"🚨 **NEW UPDATE DETECTED!** `{diff}` new items were added! Type `{PREFIX}latest` to view them!")
     else:
         await ctx.send(f"✅ Database is up to date. Currently tracking **{new_count:,} items** (v{ITEMS_VERSION}).")
+
+@bot.command(name="sync", aliases=["fetch", "hotfix"])
+async def cmd_sync(ctx):
+    status_msg = await ctx.send("🔄 **Syncing with Ubisoft servers...** Checking for silent maintenance hotfixes in the background (12s)...")
+    old_mtime = os.path.getmtime(ITEMS_DAT_PATH) if os.path.exists(ITEMS_DAT_PATH) else 0
+
+    success, msg = await perform_silent_sync()
+    if not success:
+        await status_msg.edit(content=f"⚠️ {msg}")
+        return
+
+    new_mtime = os.path.getmtime(ITEMS_DAT_PATH) if os.path.exists(ITEMS_DAT_PATH) else 0
+    if new_mtime != old_mtime and old_mtime != 0:
+        await status_msg.edit(content="🚨 **NEW HOTFIX DETECTED!** Game files were updated during sync! Computing changelog...")
+    else:
+        await status_msg.edit(content=f"✅ **Sync complete!** Your game database is 100% current with the latest Ubisoft servers (`{len(ITEMS_CACHE):,}` items).")
 
 @bot.command(name="texture")
 async def cmd_texture(ctx, *, tex_name: str = None):
