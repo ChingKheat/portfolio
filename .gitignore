@@ -12,3 +12,9 @@ Thumbs.db
 /auto-clicker/
 /geo_heritage/
 /geo_heritage_personal/
+
+# Extracted datamine test files
+*.png
+gt_test_preview.png
+dataminer_state.json
+

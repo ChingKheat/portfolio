@@ -1,0 +1,42 @@
+name: Growtopia 24/7 Cloud Sentinel
+
+on:
+  schedule:
+    # Runs automatically every 30 minutes, 24 hours a day
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  check-growtopia:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Dependencies
+        run: |
+          pip install requests beautifulsoup4
+
+      - name: Check for New Growtopia Updates
+        run: |
+          python scripts/cloud_growtopia_checker.py
+
+      - name: Save Updated State to Repository
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain scripts/gt_cloud_state.json)" ]; then
+            git add scripts/gt_cloud_state.json
+            git commit -m "chore(growtopia): new game update recorded [skip ci]"
+            git push
+          else
+            echo "No update detected. State is already current."
+          fi
