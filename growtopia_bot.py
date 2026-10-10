@@ -212,244 +212,6 @@ async def cmd_status(ctx):
     )
     await ctx.send(embed=embed)
 
-class LatestItemsView(discord.ui.View):
-    def __init__(self, mtime_str: str):
-        super().__init__(timeout=300)
-        self.mtime_str = mtime_str
-
-    def get_embed(self, page: str) -> discord.Embed:
-        if page == "overview":
-            embed = discord.Embed(
-                title="✨ Growtopia v5.59 • Update Directory",
-                description=(
-                    "> **120 New Items Discovered** (IDs `#16314` – `#16433`)\n"
-                    f"> 📅 Released October 5, 2026 • Synced: `{self.mtime_str}`\n\n"
-                    "```yaml\n"
-                    "📊 120-Item Complete Formula\n"
-                    "  • 45 Playable Items   : Weapons, Sets, Hair & Auras\n"
-                    "  • 60 Paired Seeds     : Engine-generated for farming\n"
-                    "  • 15 Unreleased Slots : Encrypted mid-month slots (#16396-#16425)\n"
-                    "```\n"
-                    "👇 **Tap the buttons below to browse each collection:**"
-                ),
-                color=0x5865F2
-            )
-            embed.add_field(
-                name="⚔️ Featured: Immortal Collection",
-                value=(
-                    "`#16428` **Sonic Buster Katana** *(Weapon)*\n"
-                    "`#16426` **Immortal Pickaxe** *(Hand)*\n"
-                    "`#16432` **Immortal Puppy Leash** *(Pet)*"
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="👑 Featured: Domination & Royal",
-                value=(
-                    "`#16388` **Royal Domination Armor** *(Body)*\n"
-                    "`#16386` **Domination Armor** *(Body)*\n"
-                    "`#16384` **Shadow-You** *(Dark Clone Aura)*"
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="🍂 Featured: Fall Event",
-                value=(
-                    "`#16370` **Fall Witch's Set** *(Hat, Coat, Pants)*\n"
-                    "`#16362` **Halo of Autumn Leaves** *(Back)*\n"
-                    "`#16366` **Sheep Chariot** *(Mount)*"
-                ),
-                inline=False
-            )
-            embed.set_footer(text="Tap buttons below to view full items & stats • v5.59")
-            return embed
-
-        elif page == "immortal":
-            embed = discord.Embed(
-                title="⚔️ Immortal Collection (v5.59)",
-                description="> Complete datamined stats for the Immortal series:",
-                color=0xE74C3C
-            )
-            embed.add_field(
-                name="Weapons & Hand Items",
-                value=(
-                    "`#16428` **Immortal Sonic Buster Katana** *(Hand / Weapon)*\n"
-                    "╰ Seed: `#16429` • Break: 5 hits\n"
-                    "`#16426` **Immortal Pickaxe** *(Hand / Tool)*\n"
-                    "╰ Seed: `#16427` • Break: 5 hits"
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="Wearables & Pets",
-                value=(
-                    "`#16432` **Immortal Puppy Leash** *(Hand / Pet)* • Seed: `#16433`\n"
-                    "`#16340` **Immortal Night Vision Goggles** *(Face / Mask)* • Seed: `#16341`\n"
-                    "`#16430` **Immortal Title** *(Achievement / Honor)*"
-                ),
-                inline=False
-            )
-            embed.set_footer(text="Tap 🏠 Overview to return • v5.59 Datamine")
-            return embed
-
-        elif page == "domination":
-            embed = discord.Embed(
-                title="👑 Domination & Royal Gear (v5.59)",
-                description="> Complete armor and shadow vanity items:",
-                color=0x9B59B6
-            )
-            embed.add_field(
-                name="Armor & Vanity",
-                value=(
-                    "`#16388` **Royal Domination Armor** *(Chest / Body)*\n"
-                    "`#16386` **Domination Armor** *(Chest / Body)*\n"
-                    "`#16384` **Shadow-You** *(Dark Clone Aura / Back)*\n"
-                    "`#16394` **Drape Coat** *(Back / Cape)*"
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="Tools & Decor",
-                value=(
-                    "`#16390` **Sharp Wrench Style** *(Tool Skin)*\n"
-                    "`#16392` **Sharp Wrench Decoration** *(Placeable)*"
-                ),
-                inline=False
-            )
-            embed.set_footer(text="Tap 🏠 Overview to return • v5.59 Datamine")
-            return embed
-
-        elif page == "fall":
-            embed = discord.Embed(
-                title="🍂 Fall & Autumn Festival (v5.59)",
-                description="> Autumn seasonal event equipment, scenery & mounts:",
-                color=0xE67E22
-            )
-            embed.add_field(
-                name="Event Costumes & Mount",
-                value=(
-                    "`#16370` **Fall Witch's Hat** *(Head)*\n"
-                    "`#16372` **Fall Witch's Coat** *(Body)*\n"
-                    "`#16374` **Fall Witch's Pants** *(Legs)*\n"
-                    "`#16366` **Sheep Chariot** *(Mount / Feet)*\n"
-                    "`#16362` **Halo of Autumn Leaves** *(Back / Aura)*\n"
-                    "`#16364` **Mantle of Corn** *(Back)*"
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="Scenery & Blocks",
-                value=(
-                    "`#16368` **Arched Bridge** • `#16380` **Lake Lantern**\n"
-                    "`#16376` **Gazebo Base** • `#16378` **Gazebo Roof**\n"
-                    "`#16382` **Corn Field**"
-                ),
-                inline=False
-            )
-            embed.set_footer(text="Tap 🏠 Overview to return • v5.59 Datamine")
-            return embed
-
-        elif page == "hair_auras":
-            embed = discord.Embed(
-                title="✂️ Hairstyles, Auras & Growmojis (v5.59)",
-                description="> Cosmetics, hair styles, and chat emotes:",
-                color=0x1ABC9C
-            )
-            embed.add_field(
-                name="Hairstyles & Hats",
-                value=(
-                    "`#16354` **Wolf Cut Hair** • `#16352` **Tied Anime Bun**\n"
-                    "`#16350` **Tanuki Ears** • `#16348` **Orca Hood**\n"
-                    "`#16346` **Horns of Calamity** • `#16344` **Blue Rose Bowler**\n"
-                    "`#16338` **North Wind Bucket Hat**"
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="Auras & Exclusives",
-                value=(
-                    "`#16314` **Spiezels' Galactic Scarf** *(Back)*\n"
-                    "`#16316` **swiftpie's Aura-Mantle** *(Aura)*\n"
-                    "`#16360` **Farmer Aura** *(Aura)*\n"
-                    "`#16318` **Xenoso's Nebulafin** • `#16320` **Nebulafin Leash**\n"
-                    "`#16342` **Bingo** • `#16358` **Wardrobe Preset**"
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="😀 Growmojis (8 New Emotes)",
-                value="🔥 Fire • 😏 Flirty • 💡 Light Bulb • 🤑 Money\n🤓 Nerd • 💀 Skull • 🏆 Trophy • 🥀 Wilted Flower",
-                inline=False
-            )
-            embed.set_footer(text="Tap 🏠 Overview to return • v5.59 Datamine")
-            return embed
-
-        elif page == "breakdown":
-            embed = discord.Embed(
-                title="📊 Full 120-Item Datamine Accounting",
-                description=(
-                    "> Complete accounting of all IDs `#16314` through `#16433`:\n\n"
-                    "```yaml\n"
-                    "🎮 45 Main Items    : Playable equipment & cosmetics\n"
-                    "🌱 60 Paired Seeds  : Engine-generated seed IDs (Item ID + 1)\n"
-                    "🔒 15 Secret Slots  : Reserved event slots (#16396-#16425)\n"
-                    "────────────────────────────────────────────────\n"
-                    "📦 120 Total Items  : Exactly 120 registered IDs\n"
-                    "```"
-                ),
-                color=0x34495E
-            )
-            embed.add_field(
-                name="🌱 Why are there 60 seeds?",
-                value=(
-                    "In Growtopia's engine, every placeable item is paired with a distinct seed ID.\n"
-                    "• 45 playable item seeds (e.g. `#16428 Katana` ➔ `#16429 Katana Seed`)\n"
-                    "• 15 secret placeholder seeds (e.g. `#16396 null_item` ➔ `#16397 Seed`)\n"
-                    "= **60 total seeds**."
-                ),
-                inline=False
-            )
-            embed.add_field(
-                name="🔒 What are the 15 secret slots?",
-                value=(
-                    "Slots `#16396` through `#16425` are marked as `null_item16396` by Ubisoft.\n"
-                    "They are encrypted placeholders reserved for upcoming surprise events and mid-month hotfixes."
-                ),
-                inline=False
-            )
-            embed.set_footer(text="Tap 🏠 Overview to return • v5.59 Datamine")
-            return embed
-
-    @discord.ui.button(label="Overview", emoji="🏠", style=discord.ButtonStyle.primary, row=0)
-    async def btn_overview(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = self.get_embed("overview")
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="Immortal", emoji="⚔️", style=discord.ButtonStyle.secondary, row=0)
-    async def btn_immortal(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = self.get_embed("immortal")
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="Domination", emoji="👑", style=discord.ButtonStyle.secondary, row=0)
-    async def btn_domination(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = self.get_embed("domination")
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="Fall Event", emoji="🍂", style=discord.ButtonStyle.secondary, row=0)
-    async def btn_fall(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = self.get_embed("fall")
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="Hair & Auras", emoji="✂️", style=discord.ButtonStyle.secondary, row=1)
-    async def btn_hair(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = self.get_embed("hair_auras")
-        await interaction.response.edit_message(embed=embed, view=self)
-
-    @discord.ui.button(label="120 Breakdown", emoji="📊", style=discord.ButtonStyle.secondary, row=1)
-    async def btn_breakdown(self, interaction: discord.Interaction, button: discord.ui.Button):
-        embed = self.get_embed("breakdown")
-        await interaction.response.edit_message(embed=embed, view=self)
-
 @bot.command(name="latest")
 async def cmd_latest(ctx):
     if not ITEMS_CACHE:
@@ -461,17 +223,110 @@ async def cmd_latest(ctx):
         mtime = os.path.getmtime(ITEMS_DAT_PATH)
         mtime_str = datetime.datetime.fromtimestamp(mtime).strftime("%b %d, %Y at %I:%M %p")
 
-    view = LatestItemsView(mtime_str)
-    embed = view.get_embed("overview")
+    embed = discord.Embed(
+        title="✨ Growtopia v5.59 • Complete Patch Directory",
+        description=(
+            f"> 📅 **Release Date:** October 5, 2026 • Synced: `{mtime_str}`\n"
+            f"> 📦 **Total Datamined Range:** `120 Items` (IDs `#16314` – `#16433`)\n\n"
+            "```yaml\n"
+            "📊 120-Item Complete Formula\n"
+            "  • 45 Main Items    : Weapons, Costumes, Hair & Auras\n"
+            "  • 60 Paired Seeds  : Farmable seed IDs (Item ID + 1)\n"
+            "  • 15 Secret Slots  : Reserved event slots (#16396-#16425)\n"
+            "```"
+        ),
+        color=0x5865F2
+    )
+
+    embed.add_field(
+        name="⚔️ Immortal Collection (5 Items)",
+        value=(
+            "`16428` **Sonic Buster Katana** *(Hand / Weapon)*\n"
+            "`16426` **Immortal Pickaxe** *(Hand / Tool)*\n"
+            "`16432` **Immortal Puppy Leash** *(Hand / Pet)*\n"
+            "`16430` **Immortal Title** *(Achievement / Honor)*\n"
+            "`16340` **Night Vision Goggles** *(Face / Mask)*"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="👑 Domination & Royal Gear (6 Items)",
+        value=(
+            "`16388` **Royal Domination Armor** *(Chest / Body)*\n"
+            "`16386` **Domination Armor** *(Chest / Body)*\n"
+            "`16384` **Shadow-You** *(Dark Clone Aura / Back)*\n"
+            "`16394` **Drape Coat** *(Cape / Back)*\n"
+            "`16390` **Sharp Wrench Style** *(Tool Skin)*\n"
+            "`16392` **Sharp Wrench Decoration** *(Placeable)*"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🍂 Fall & Autumn Event (11 Items)",
+        value=(
+            "`16370` **Fall Witch's Hat** *(Head)* • `16372` **Coat** • `16374` **Pants**\n"
+            "`16362` **Halo of Autumn Leaves** *(Back / Aura)* • `16364` **Mantle of Corn**\n"
+            "`16366` **Sheep Chariot** *(Mount / Feet)*\n"
+            "`16376` **Gazebo Base** • `16378` **Gazebo Roof**\n"
+            "`16368` **Arched Bridge** • `16380` **Lake Lantern** • `16382` **Corn Field**"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="✂️ Hairstyles & Hats (7 Items)",
+        value=(
+            "`16354` **Wolf Cut Hair** • `16352` **Tied Anime Bun**\n"
+            "`16350` **Tanuki Ears** • `16348` **Orca Hood**\n"
+            "`16346` **Horns of Calamity** • `16344` **Blue Rose Bowler Hat**\n"
+            "`16338` **North Wind Bucket Hat**"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🌌 Auras, Pets & Exclusives (6 Items)",
+        value=(
+            "`16314` **Spiezels' Galactic Scarf** *(Back)*\n"
+            "`16316` **swiftpie's Aura-Mantle** *(Aura)*\n"
+            "`16360` **Farmer Aura** *(Aura)*\n"
+            "`16318` **Xenoso's Nebulafin** • `16320` **Nebulafin Leash**\n"
+            "`16342` **Bingo** • `16358` **New Wardrobe Preset**"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="😀 Growmojis & Crate (9 Items)",
+        value=(
+            "`16322`–`16336` **8 Growmojis:** 🔥 Fire • 😏 Flirty • 💡 Light Bulb • 🤑 Money\n"
+            "╰ 🤓 Nerd • 💀 Skull • 🏆 Trophy • 🥀 Wilted Flower\n"
+            "`16356` **Voucher Dayz Growmoji Mystery Crate**"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🔒 Reserved Slots & Paired Seeds (75 IDs)",
+        value=(
+            "• **15 Secret Slots:** IDs `#16396` through `#16425` *(encrypted null_items for upcoming events)*\n"
+            "• **60 Paired Seeds:** Every placeable item has a paired seed ID *(45 main + 15 secret = 60 seeds)*"
+        ),
+        inline=False
+    )
+
+    embed.set_footer(text=f"Total: 45 items + 15 secret slots + 60 seeds = 120 items | Patch v5.59 | Type !item <name>")
 
     # Attach preview if available
     cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
     if os.path.exists(cosmetics_png):
         file = discord.File(cosmetics_png, filename="player_cosmetics4.png")
         embed.set_image(url="attachment://player_cosmetics4.png")
-        await ctx.send(embed=embed, file=file, view=view)
+        await ctx.send(embed=embed, file=file)
     else:
-        await ctx.send(embed=embed, view=view)
+        await ctx.send(embed=embed)
 
 @bot.command(name="item", aliases=["search", "find"])
 async def cmd_item(ctx, *, query: str = None):
