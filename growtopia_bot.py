@@ -91,6 +91,7 @@ async def cmd_help(ctx):
     )
     embed.add_field(name=f"`{PREFIX}start`", value="Activate real-time auto-watching and send the latest items here!", inline=False)
     embed.add_field(name=f"`{PREFIX}diff`", value="Show the patch changelog (new & modified/rebalanced items).", inline=False)
+    embed.add_field(name=f"`{PREFIX}guild`", value="Inspect Guild Flag shapes, shields, and logo sprite sheets.", inline=False)
     embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game items from the latest patch.", inline=False)
     embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16428`).", inline=False)
     embed.add_field(name=f"`{PREFIX}check`", value="Check if a new game update is available right now.", inline=False)
@@ -396,6 +397,46 @@ async def cmd_diff(ctx, *, patch_name: str = "latest"):
 
     embed.set_footer(text=f"{patch_info} • Options: !diff latest, !diff previous, !diff live")
     await ctx.send(embed=embed)
+
+@bot.command(name="guild", aliases=["guilds", "guildlogo", "guildflag"])
+async def cmd_guild(ctx, *, query: str = "1"):
+    """Shows Guild Flag and Logo sprite sheets and items."""
+    query_clean = query.strip().lower()
+
+    if query_clean in ["1", "2", "3", "logo", "logos", "flag", "flags", "default"]:
+        page_num = "1" if query_clean in ["1", "logo", "logos", "flag", "flags", "default"] else query_clean
+        tex_name = f"gd_page{page_num}.rttex"
+        png_name = f"gd_page{page_num}.png"
+        rttex_path = os.path.join(GAME_DIR, tex_name)
+        png_path = os.path.join(SCRIPT_DIR, png_name)
+
+        if not os.path.exists(png_path) and os.path.exists(rttex_path):
+            try:
+                convert_rttex(rttex_path, png_path)
+            except Exception as e:
+                print(f"Error converting {tex_name}: {e}")
+
+        embed = discord.Embed(
+            title=f"🛡️ Growtopia Guild Flag & Logo Designs (Sheet {page_num})",
+            description=(
+                f"Contains the official **Guild Flag Shapes, Emblems, and Patterns**!\n\n"
+                f"• **Shapes:** Shield, Arrow, Wave, Peak, Banner\n"
+                f"• **Patterns:** Flame, Harlequin, Plaid, Cross, Slant, Filigree, Division\n"
+                f"• **Texture Sheet:** `{tex_name}`\n"
+            ),
+            color=0xf1c40f
+        )
+        embed.set_footer(text=f"Try: !guild 1, !guild 2, !guild 3, or !item Guild Flag - Shield")
+
+        if os.path.exists(png_path):
+            file = discord.File(png_path, filename=png_name)
+            embed.set_image(url=f"attachment://{png_name}")
+            await ctx.send(embed=embed, file=file)
+        else:
+            await ctx.send(embed=embed)
+    else:
+        # Search guild flag item directly
+        await cmd_item(ctx, query=f"Guild Flag {query}")
 
 @bot.command(name="check")
 async def cmd_check(ctx):
