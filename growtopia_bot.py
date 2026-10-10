@@ -228,14 +228,19 @@ async def cmd_latest(ctx):
         description=(
             f"📅 **Patch Release Date:** `October 5, 2026` (Version 5.59)\n"
             f"⏰ **Downloaded to PC:** `{mtime_str}`\n"
-            f"📦 **New Items in this Patch:** `120 items` (IDs `#16314` – `#16433`)\n\n"
-            f"Here are the newest items categorized by theme:\n"
+            f"📦 **Total Range:** `120 items` (IDs `#16314` – `#16433`)\n\n"
+            f"**📊 120-Item Complete Breakdown:**\n"
+            f"• **45 Main Items & Wearables** (Immortal, Domination, Fall, Hair, Auras)\n"
+            f"• **9 Growmojis & Utilities** (Fire, Skull, Trophy, Wardrobe, Bingo)\n"
+            f"• **60 Paired Seed IDs** (Every block/wearable has a paired seed ID)\n"
+            f"• **30 Unreleased / Encrypted Slots** (15 base items + 15 seeds: `#16396`–`#16425`)\n"
+            f"━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
         ),
         color=0x5865F2
     )
 
     embed.add_field(
-        name="⚔️ Immortal Series (Released: Oct 5, 2026)",
+        name="⚔️ Immortal Series (5 Items)",
         value=(
             "• `#16432` **Immortal Puppy Leash**\n"
             "• `#16430` **Immortal Title**\n"
@@ -243,47 +248,87 @@ async def cmd_latest(ctx):
             "• `#16426` **Immortal Pickaxe**\n"
             "• `#16340` **Immortal Night Vision Goggles**"
         ),
-        inline=False
+        inline=True
     )
 
     embed.add_field(
-        name="👑 Domination & Royal Gear (Released: Oct 5, 2026)",
+        name="👑 Domination & Royal (6 Items)",
         value=(
             "• `#16388` **Royal Domination Armor**\n"
             "• `#16386` **Domination Armor**\n"
             "• `#16384` **Shadow-You** (Dark Clone)\n"
             "• `#16394` **Drape Coat**\n"
-            "• `#16390` **Sharp Wrench Style**"
+            "• `#16390` **Sharp Wrench Style**\n"
+            "• `#16392` **Sharp Wrench Decoration**"
         ),
-        inline=False
+        inline=True
     )
 
     embed.add_field(
-        name="🍂 Fall & Autumn Event (Released: Oct 5, 2026)",
+        name="🍂 Fall & Autumn Event (11 Items)",
         value=(
-            "• `#16370` **Fall Witch's Hat**\n"
-            "• `#16372` **Fall Witch's Coat**\n"
-            "• `#16374` **Fall Witch's Pants**\n"
-            "• `#16362` **Halo of Autumn Leaves**\n"
+            "• `#16370` **Fall Witch's Hat** • `#16372` **Coat** • `#16374` **Pants**\n"
+            "• `#16362` **Halo of Autumn Leaves** • `#16364` **Mantle of Corn**\n"
             "• `#16366` **Sheep Chariot** (Mount)\n"
-            "• `#16368` **Arched Bridge** • `#16380` **Lake Lantern**"
+            "• `#16368` **Arched Bridge** • `#16380` **Lake Lantern**\n"
+            "• `#16376` **Gazebo Base** • `#16378` **Roof** • `#16382` **Corn Field**"
         ),
         inline=False
     )
 
     embed.add_field(
-        name="✂️ Hairstyles & Hats (Released: Oct 5, 2026)",
+        name="✂️ Hairstyles & Hats (7 Items)",
         value=(
-            "• `#16354` **Wolf Cut Hair**\n"
-            "• `#16352` **Tied Anime Bun**\n"
-            "• `#16350` **Tanuki Ears**\n"
-            "• `#16348` **Orca Hood**\n"
-            "• `#16346` **Horns of Calamity**"
+            "• `#16354` **Wolf Cut Hair** • `#16352` **Tied Anime Bun**\n"
+            "• `#16350` **Tanuki Ears** • `#16348` **Orca Hood**\n"
+            "• `#16346` **Horns of Calamity** • `#16344` **Blue Rose Bowler Hat**\n"
+            "• `#16338` **North Wind Bucket Hat**"
         ),
         inline=False
     )
 
-    embed.set_footer(text=f"Patch v5.59 • Downloaded {mtime_str} • Type !item <name> for single item dates & stats")
+    embed.add_field(
+        name="🌌 Auras, Pets & Exclusives (6 Items)",
+        value=(
+            "• `#16314` **Spiezels' Galactic Scarf**\n"
+            "• `#16316` **swiftpie's Aura-Mantle**\n"
+            "• `#16318` **Xenoso's Nebulafin** • `#16320` **Nebulafin Leash**\n"
+            "• `#16360` **Farmer Aura**\n"
+            "• `#16342` **Bingo** • `#16358` **New Wardrobe Preset**"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="😀 Growmojis & Crate (9 Items)",
+        value=(
+            "• `#16322` **Fire** • `#16324` **Flirty**\n"
+            "• `#16326` **Light Bulb** • `#16328` **Money-Mouth**\n"
+            "• `#16330` **Nerd** • `#16332` **Skull**\n"
+            "• `#16334` **Trophy** • `#16336` **Wilted Flower**\n"
+            "• `#16356` **Growmoji Mystery Crate**"
+        ),
+        inline=True
+    )
+
+    embed.add_field(
+        name="🔒 Unreleased & Reserved Slots (30 IDs)",
+        value=(
+            "• IDs `#16396` through `#16425` (`null_item16396` to `null_item16425` + seeds)\n"
+            "*Ubisoft encrypts and reserves these slot IDs in items.dat for upcoming secret events and mid-month mini-updates.*"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🌱 Paired Seed IDs (60 Seeds)",
+        value=(
+            "*In Growtopia's engine, every block, tree, and clothing item is paired with a distinct seed ID (e.g. `#16428 Katana` ➔ `#16429 Katana Seed`). Total: 45 item seeds + 15 unreleased seeds = 60 seeds.*"
+        ),
+        inline=False
+    )
+
+    embed.set_footer(text=f"Total: 45 regular + 15 null + 60 seeds = 120 items | Patch v5.59 | Downloaded {mtime_str}")
 
     # Attach preview if available
     cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
