@@ -17,4 +17,7 @@ Thumbs.db
 *.png
 gt_test_preview.png
 dataminer_state.json
+bot_config.json
+.env
+
 

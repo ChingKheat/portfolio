@@ -137,11 +137,102 @@ def parse_itemsdat(filepath=ITEMS_DAT_PATH):
             "texture": texture,
             "rarity": rarity,
             "grow_time": grow_time,
+            "break_hits": break_hits,
+            "item_type": it_type,
+            "body_part": body_part,
+            "collision": collision,
+            "tex_x": tex_x,
+            "tex_y": tex_y,
             "info": info,
             "punch_options": punch_options
         })
 
     return version, items
+
+SNAPSHOT_FILE = os.path.join(SCRIPT_DIR, "items_snapshot.json")
+
+def save_snapshot(items, filepath=SNAPSHOT_FILE):
+    """Saves items list as JSON baseline snapshot."""
+    try:
+        with open(filepath, "w", encoding="utf-8") as f:
+            json.dump(items, f, indent=2)
+        return True
+    except Exception as e:
+        print(f"Error saving snapshot: {e}")
+        return False
+
+def load_snapshot(filepath=SNAPSHOT_FILE):
+    """Loads previous items list baseline snapshot."""
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading snapshot: {e}")
+    return None
+
+def generate_items_diff(old_items, new_items):
+    """
+    Compares two lists of item dicts and detects:
+    - New items (new IDs)
+    - Modified / rebalanced items (rarity, grow time, break hits, textures, name changes)
+    - Removed items
+    """
+    if not old_items:
+        return {"added": new_items, "modified": [], "removed": []}
+
+    old_map = {it["id"]: it for it in old_items}
+    new_map = {it["id"]: it for it in new_items}
+
+    added = []
+    modified = []
+    removed = []
+
+    for item_id, new_it in new_map.items():
+        if item_id not in old_map:
+            added.append(new_it)
+        else:
+            old_it = old_map[item_id]
+            changes = []
+
+            # Check rename (e.g. placeholder null_item -> actual item name)
+            old_name = old_it.get("name", "")
+            new_name = new_it.get("name", "")
+            if old_name != new_name:
+                changes.append(f"Name: `{old_name}` -> **`{new_name}`**")
+
+            # Check rarity change / rebalance
+            if old_it.get("rarity") != new_it.get("rarity"):
+                changes.append(f"Rarity: `{old_it.get('rarity')}` -> `{new_it.get('rarity')}`")
+
+            # Check grow time change
+            if old_it.get("grow_time") != new_it.get("grow_time"):
+                changes.append(f"Grow Time: `{old_it.get('grow_time')}s` -> `{new_it.get('grow_time')}s`")
+
+            # Check break hits / hardness change
+            if old_it.get("break_hits") != new_it.get("break_hits"):
+                changes.append(f"Break Hits: `{old_it.get('break_hits')}` -> `{new_it.get('break_hits')}`")
+
+            # Check texture change
+            if old_it.get("texture") != new_it.get("texture"):
+                changes.append(f"Texture: `{old_it.get('texture')}` -> `{new_it.get('texture')}`")
+
+            if changes:
+                modified.append({
+                    "id": item_id,
+                    "name": new_name or old_name,
+                    "changes": changes
+                })
+
+    for item_id, old_it in old_map.items():
+        if item_id not in new_map:
+            removed.append(old_it)
+
+    return {
+        "added": added,
+        "modified": modified,
+        "removed": removed
+    }
 
 def convert_rttex(rttex_path, output_png_path):
     with open(rttex_path, "rb") as f:
