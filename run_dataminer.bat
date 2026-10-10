@@ -7,7 +7,7 @@ echo         GROWTOPIA REAL-TIME DISCORD DATAMINER
 echo ========================================================
 echo.
 echo  [1] Start 24/7 Auto-Watcher (Detects updates in the 1st second!)
-echo  [2] Check Current Database & Test Webhook
+echo  [2] Check Current Database and Test Webhook
 echo.
 echo ========================================================
 set /p choice="Enter choice (1 or 2): "
