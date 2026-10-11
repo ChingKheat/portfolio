@@ -5,6 +5,15 @@ import asyncio
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# Prevent multiple bot instances from running simultaneously
+if sys.platform == "win32":
+    import ctypes
+    ERROR_ALREADY_EXISTS = 183
+    _bot_mutex = ctypes.windll.kernel32.CreateMutexW(None, False, "GrowtopiaDataminerBotSingletonMutex")
+    if ctypes.windll.kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+        print("[WARNING] Another instance of Growtopia Dataminer bot is already running. Exiting.")
+        sys.exit(0)
+
 # Handle windowless / pythonw execution
 if sys.stdout is None:
     sys.stdout = open(os.path.join(SCRIPT_DIR, "bot.log"), "a", encoding="utf-8")
