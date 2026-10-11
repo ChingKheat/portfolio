@@ -146,6 +146,22 @@ async def on_ready():
     if not auto_hotfix_sync_loop.is_running():
         auto_hotfix_sync_loop.start()
 
+    # Post an online confirmation to the channel so the user knows it's active
+    if ALERT_CHANNEL_ID:
+        try:
+            channel = bot.get_channel(ALERT_CHANNEL_ID)
+            if channel:
+                await channel.send("🟢 **Growtopia Dataminer is ONLINE!** Ready for commands (`!latest`, `!start`, `!diff`, `!sync`).")
+        except Exception as e:
+            print(f"Error announcing online: {e}")
+
+@bot.event
+async def on_command_error(ctx, error):
+    print(f"[Command Error in {ctx.command}]: {error}")
+    if isinstance(error, commands.CommandNotFound):
+        return
+    await ctx.send(f"⚠️ **Error executing command:** `{error}`")
+
 @bot.event
 async def on_message(message):
     if message.author.bot:
