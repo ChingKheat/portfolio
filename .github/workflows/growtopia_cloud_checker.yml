@@ -26,6 +26,8 @@ jobs:
           pip install requests beautifulsoup4 pillow
 
       - name: Check for New Growtopia Updates & Datamine
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           python scripts/cloud_growtopia_checker.py
 

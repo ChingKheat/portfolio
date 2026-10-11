@@ -15,10 +15,7 @@ sys.path.append(REPO_DIR)
 
 import growtopia_miner as gm
 
-DISCORD_WEBHOOK_URL = os.environ.get(
-    "DISCORD_WEBHOOK_URL",
-    "https://discordapp.com/api/webhooks/1558414040466984963/fqks_HwbDPMBCbsO6Mu4fEDTIC568rv-6XmW9ZmFoKVFDchcwpzu0eXWaOSYfDPGT9-m"
-)
+DISCORD_WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL", "")
 
 STATE_FILE = os.path.join(SCRIPT_DIR, "gt_cloud_state.json")
 CLOUD_SNAPSHOT_FILE = os.path.join(SCRIPT_DIR, "cloud_snapshot.json")
