@@ -146,6 +146,19 @@ async def on_ready():
     if not auto_hotfix_sync_loop.is_running():
         auto_hotfix_sync_loop.start()
 
+@bot.event
+async def on_message(message):
+    if message.author.bot:
+        return
+    # Handle multi-line messages gracefully (e.g. user sends !sync and !start together)
+    lines = [line.strip() for line in message.content.split("\n") if line.strip().startswith(PREFIX)]
+    if len(lines) > 1:
+        for line in lines:
+            message.content = line
+            await bot.process_commands(message)
+    else:
+        await bot.process_commands(message)
+
 WATCHER_ENABLED = True
 ALERT_CHANNEL_ID = config.get("alert_channel_id")
 
