@@ -97,6 +97,7 @@ def parse_itemsdat(filepath=ITEMS_DAT_PATH):
         info = ""
         hit_sfx = ""
         punch_options = ""
+        extra_str = ""
 
         if version >= 11:
             punch_options = read_str(item_id)
@@ -130,6 +131,8 @@ def parse_itemsdat(filepath=ITEMS_DAT_PATH):
                 pos += 4
             if version >= 26:
                 pos += 1
+            if version >= 27:
+                extra_str = read_str(item_id, encoded=False)
 
         items.append({
             "id": item_id,
@@ -144,7 +147,8 @@ def parse_itemsdat(filepath=ITEMS_DAT_PATH):
             "tex_x": tex_x,
             "tex_y": tex_y,
             "info": info,
-            "punch_options": punch_options
+            "punch_options": punch_options,
+            "extra_str": extra_str
         })
 
     return version, items

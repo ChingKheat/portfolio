@@ -66,18 +66,22 @@ bot = commands.Bot(command_prefix=PREFIX, intents=intents, help_command=None)
 
 # Cache loaded items in memory
 ITEMS_CACHE = []
-ITEMS_VERSION = 26
+ITEMS_VERSION = 27
 LAST_MTIME = 0
 LAST_COUNT = 0
 
 def refresh_items():
     global ITEMS_CACHE, ITEMS_VERSION, LAST_MTIME, LAST_COUNT
     if os.path.exists(ITEMS_DAT_PATH):
-        LAST_MTIME = os.path.getmtime(ITEMS_DAT_PATH)
-        ITEMS_VERSION, ITEMS_CACHE = parse_itemsdat()
-        LAST_COUNT = len(ITEMS_CACHE)
-        print(f"Loaded {LAST_COUNT} items (v{ITEMS_VERSION})")
-        return True
+        try:
+            LAST_MTIME = os.path.getmtime(ITEMS_DAT_PATH)
+            ITEMS_VERSION, ITEMS_CACHE = parse_itemsdat()
+            LAST_COUNT = len(ITEMS_CACHE)
+            print(f"Loaded {LAST_COUNT} items (v{ITEMS_VERSION})")
+            return True
+        except Exception as e:
+            print(f"Error loading items.dat: {e}")
+            return False
     return False
 
 GROWTOPIA_EXE = os.path.join(DEFAULT_GT_PATH, "Growtopia.exe")
@@ -186,10 +190,11 @@ async def cmd_help(ctx):
         color=0x3498db
     )
     embed.add_field(name=f"`{PREFIX}start`", value="Activate real-time auto-watching and send the latest items here!", inline=False)
+    embed.add_field(name=f"`{PREFIX}wonderweek` *(or `{PREFIX}ww`)*", value="Show all datamined items & leaks for Wonder Week!", inline=False)
+    embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game items from the latest patch.", inline=False)
     embed.add_field(name=f"`{PREFIX}diff`", value="Show the patch changelog (new & modified/rebalanced items).", inline=False)
     embed.add_field(name=f"`{PREFIX}sync`", value="Silently check for server maintenance hotfixes right now.", inline=False)
-    embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game items from the latest patch.", inline=False)
-    embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16428`).", inline=False)
+    embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16400`).", inline=False)
     embed.add_field(name=f"`{PREFIX}check`", value="Check if a new game update is available right now.", inline=False)
     embed.add_field(name=f"`{PREFIX}status`", value="Check if the real-time watcher is active.", inline=False)
     embed.add_field(name=f"`{PREFIX}stop`", value="Pause automatic leak alerts.", inline=False)
@@ -256,24 +261,41 @@ async def cmd_latest(ctx):
         refresh_items()
 
     import datetime
-    mtime_str = "Oct 10, 2026"
+    mtime_str = "Oct 13, 2026"
     if os.path.exists(ITEMS_DAT_PATH):
         mtime = os.path.getmtime(ITEMS_DAT_PATH)
         mtime_str = datetime.datetime.fromtimestamp(mtime).strftime("%b %d, %Y at %I:%M %p")
 
     embed = discord.Embed(
-        title="✨ Growtopia v5.59 • Complete Patch Directory",
+        title="✨ Growtopia Latest Patch & Wonder Week Leaks",
         description=(
-            f"> 📅 **Release Date:** October 5, 2026 • Synced: `{mtime_str}`\n"
+            f"> 📅 **Database Synced:** `{mtime_str}` • **Format:** `items.dat v{ITEMS_VERSION}`\n"
+            f"> 🌟 **Active Event:** **Wonder Week 2026/2027** (15 Secret Slots Unlocked!)\n"
             f"> 📦 **Total Datamined Range:** `120 Items` (IDs `#16314` – `#16433`)\n\n"
             "```yaml\n"
-            "📊 120-Item Complete Formula\n"
-            "  • 45 Main Items    : Weapons, Costumes, Hair & Auras\n"
-            "  • 60 Paired Seeds  : Farmable seed IDs (Item ID + 1)\n"
-            "  • 15 Secret Slots  : Reserved event slots (#16396-#16425)\n"
+            "📊 Latest Database Breakdown\n"
+            "  • 15 Wonder Week : All event items unlocked from secret slots (#16396-#16425)\n"
+            "  • 5  Immortal    : Sonic Buster Katana, Pickaxe, Title, Puppy Leash, NVG\n"
+            "  • 40 Autumn/Clash: Royal Armor, Shadow-You, Fall Witch, Auras & Pets\n"
+            "  • 60 Paired Seeds: Full seed pairs for every placeable/wearable item\n"
             "```"
         ),
-        color=0x5865F2
+        color=0xF1C40F
+    )
+
+    embed.add_field(
+        name="🌟 Wonder Week Exclusives (15 Unlocked Items!)",
+        value=(
+            "`16400` **Mecha Tank** *(Mount / Feet)* • `16406` **WM - Paradise City** *(Placeable)*\n"
+            "`16398` **Lightning Nunchucks** *(Hand)* • `16396` **Atom Constructs** *(Hand)*\n"
+            "`16402` **Pariah's Shawl** *(Back / Cape)* • `16404` **Super Stingers** *(Back / Wings)*\n"
+            "`16408` **Winged Hair** *(Hair)* • `16424` **Winged Hair Hat** *(Hat)*\n"
+            "`16412` **Atom Suit** *(Shirt)* • `16410` **Atom Shorts** *(Pants)*\n"
+            "`16414` **Lightning Nunchucks Mask** • `16418` **Pariah's Mask**\n"
+            "`16416` **Mecha Tank's Birds** • `16420` **Super Stingers Belt** • `16422` **Paradise Watch**\n"
+            "💡 *Type `!wonderweek` (or `!ww`) for individual lore, stats & lock dates!*"
+        ),
+        inline=False
     )
 
     embed.add_field(
@@ -314,30 +336,18 @@ async def cmd_latest(ctx):
     )
 
     embed.add_field(
-        name="✂️ Hairstyles & Hats (7 Items)",
+        name="✂️ Hairstyles, Hats & Exclusives (13 Items)",
         value=(
-            "`16354` **Wolf Cut Hair** • `16352` **Tied Anime Bun**\n"
-            "`16350` **Tanuki Ears** • `16348` **Orca Hood**\n"
-            "`16346` **Horns of Calamity** • `16344` **Blue Rose Bowler Hat**\n"
-            "`16338` **North Wind Bucket Hat**"
+            "`16354` **Wolf Cut Hair** • `16352` **Tied Anime Bun** • `16350` **Tanuki Ears**\n"
+            "`16348` **Orca Hood** • `16346` **Horns of Calamity** • `16344` **Blue Rose Bowler Hat**\n"
+            "`16314` **Spiezels' Galactic Scarf** • `16316` **swiftpie's Aura-Mantle** • `16360` **Farmer Aura**\n"
+            "`16318` **Xenoso's Nebulafin** • `16320` **Nebulafin Leash** • `16342` **Bingo**"
         ),
         inline=False
     )
 
     embed.add_field(
-        name="🌌 Auras, Pets & Exclusives (6 Items)",
-        value=(
-            "`16314` **Spiezels' Galactic Scarf** *(Back)*\n"
-            "`16316` **swiftpie's Aura-Mantle** *(Aura)*\n"
-            "`16360` **Farmer Aura** *(Aura)*\n"
-            "`16318` **Xenoso's Nebulafin** • `16320` **Nebulafin Leash**\n"
-            "`16342` **Bingo** • `16358` **New Wardrobe Preset**"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="😀 Growmojis & Crate (9 Items)",
+        name="😀 Growmojis & Mystery Crate (9 Items)",
         value=(
             "`16322`–`16336` **8 Growmojis:** 🔥 Fire • 😏 Flirty • 💡 Light Bulb • 🤑 Money\n"
             "╰ 🤓 Nerd • 💀 Skull • 🏆 Trophy • 🥀 Wilted Flower\n"
@@ -346,18 +356,93 @@ async def cmd_latest(ctx):
         inline=False
     )
 
+    embed.set_footer(text=f"Total Tracked: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
+
+    # Attach preview if available
+    cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
+    if os.path.exists(cosmetics_png):
+        file = discord.File(cosmetics_png, filename="player_cosmetics4.png")
+        embed.set_image(url="attachment://player_cosmetics4.png")
+        await ctx.send(embed=embed, file=file)
+    else:
+        await ctx.send(embed=embed)
+
+@bot.command(name="wonderweek", aliases=["ww", "wonder", "wonderleaks"])
+async def cmd_wonderweek(ctx):
+    if not ITEMS_CACHE:
+        refresh_items()
+
+    embed = discord.Embed(
+        title="🌟 Wonder Week Event • Exclusive Leak Directory",
+        description=(
+            f"> 📅 **Event:** Wonder Week 2026/2027 • Database: `items.dat v{ITEMS_VERSION}`\n"
+            f"> 🔓 **15 Exclusive Event Items & 15 Paired Seeds Unveiled!**\n\n"
+            "```yaml\n"
+            "🌟 Wonder Week Datamined Items (IDs #16396 – #16425)\n"
+            "  • Weapons / Tech: Lightning Nunchucks, Atom Constructs, WM Paradise City\n"
+            "  • Mounts / Wings: Mecha Tank, Super Stingers, Pariah's Shawl\n"
+            "  • Costumes / Set: Winged Hair & Hat, Atom Suit & Shorts, Mask Sets\n"
+            "```"
+        ),
+        color=0xF1C40F
+    )
+
     embed.add_field(
-        name="🔒 Reserved Slots & Paired Seeds (75 IDs)",
+        name="⚡ Weapons, Technology & Placeables (4 Items)",
         value=(
-            "• **15 Secret Slots:** IDs `#16396` through `#16425` *(encrypted null_items for upcoming events)*\n"
-            "• **60 Paired Seeds:** Every placeable item has a paired seed ID *(45 main + 15 secret = 60 seeds)*"
+            "`16398` **Lightning Nunchucks** *(Hand / Weapon)*\n"
+            "╰ *\"Join the world's most fearsome fighting team! Untradeable until 18 Feb 2027.\"*\n"
+            "`16396` **Atom Constructs** *(Hand / Weapon)*\n"
+            "╰ *\"Feel invincible with the molecular power of the Atom Constructs!\"*\n"
+            "`16406` **Weather Machine - Paradise City** *(Placeable / Weather)*\n"
+            "╰ *\"Head down to the Paradise City! Untradeable until 18 Feb 2027.\"*\n"
+            "`16422` **Paradise Watch** *(Hand / Bling)*\n"
+            "╰ *\"Show off your bling! No Ultimate Edition required!\"*"
         ),
         inline=False
     )
 
-    embed.set_footer(text=f"Total: 45 items + 15 secret slots + 60 seeds = 120 items | Patch v5.59 | Type !item <name>")
+    embed.add_field(
+        name="🤖 Mecha Tank, Mounts & Wings (5 Items)",
+        value=(
+            "`16400` **Mecha Tank** *(Mount / Feet)*\n"
+            "╰ *\"Pilot a mech AND a tank! Best of both worlds 'tanks' to Mecha Tank!\"*\n"
+            "`16402` **Pariah's Shawl** *(Back / Cape)*\n"
+            "╰ *\"Become one with the desert! Alternates between two styles!\"*\n"
+            "`16404` **Super Stingers** *(Back / Wings & Blades)*\n"
+            "╰ *\"Stab your foes with the sharp blades of the Super Stingers!\"*\n"
+            "`16416` **Mecha Tank's Birds** *(Artifact / Ances)* • *\"Birds... nuff said!\"*\n"
+            "`16420` **Super Stingers Belt** *(Artifact / Belt)* • *\"Training Wheels Protocol\"*"
+        ),
+        inline=False
+    )
 
-    # Attach preview if available
+    embed.add_field(
+        name="👑 Costumes, Hairstyles & Masks (6 Items)",
+        value=(
+            "`16408` **Winged Hair** *(Hair)* • *\"Give Rapunzel some competition!\"*\n"
+            "`16424` **Winged Hair Hat** *(Hat)* • *\"Matching hat for Winged Hair.\"*\n"
+            "`16412` **Atom Suit** *(Shirt)* • `16410` **Atom Shorts** *(Pants)*\n"
+            "`16414` **Lightning Nunchucks Mask** *(Face)* • *\"Hide your secret identity!\"*\n"
+            "`16418` **Pariah's Mask** *(Face)* • *\"Death answers to you! For you are doom!\"*"
+        ),
+        inline=False
+    )
+
+    embed.add_field(
+        name="🌱 Paired Wonder Week Seeds (15 Seeds)",
+        value=(
+            "`16397` Atom Constructs Seed • `16399` Lightning Nunchucks Seed\n"
+            "`16401` Mecha Tank Seed • `16403` Pariah's Shawl Seed • `16405` Super Stingers Seed\n"
+            "`16407` WM Paradise City Seed • `16409` Winged Hair Seed • `16411` Atom Shorts Seed\n"
+            "`16413` Atom Suit Seed • `16415` Nunchucks Mask Seed • `16417` Tank Birds Seed\n"
+            "`16419` Pariah Mask Seed • `16421` Stingers Belt Seed • `16423` Watch Seed • `16425` Hat Seed"
+        ),
+        inline=False
+    )
+
+    embed.set_footer(text=f"Database: items.dat v{ITEMS_VERSION} ({len(ITEMS_CACHE):,} items) • Type !item <name or ID> for 128x128 sprite & stats")
+
     cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
     if os.path.exists(cosmetics_png):
         file = discord.File(cosmetics_png, filename="player_cosmetics4.png")
@@ -483,14 +568,28 @@ async def cmd_diff(ctx, *, patch_name: str = "latest"):
         title = "📊 Growtopia September 2026 Patch Diff (v5.58)"
         desc_header = "Changelog for the **September 2026 Update** (IDs `#16200` – `#16313`):\n"
         patch_info = "Patch v5.58 (September 2026)"
-    else:
-        # Default: Latest October 5, 2026 update (IDs #16314 to #16433)
+    elif target in ["october", "oct", "5.59", "v5.59", "clash"]:
         old_items = ITEMS_CACHE[:16314]
         new_items = ITEMS_CACHE[:16434]
         diff = generate_items_diff(old_items, new_items)
-        title = "📊 Growtopia Latest Patch Diff (v5.59 — October 5, 2026)"
+        title = "📊 Growtopia October Patch Diff (v5.59 — October 5, 2026)"
         desc_header = "Changelog for the **October 5, 2026 Clash Season Update** (IDs `#16314` – `#16433`):\n"
         patch_info = "Patch v5.59 (October 5, 2026)"
+    else:
+        # Default / Wonder Week: Compare baseline snapshot against live v27 items
+        snapshot = load_snapshot()
+        if snapshot:
+            diff = generate_items_diff(snapshot, ITEMS_CACHE)
+            title = f"📊 Growtopia Wonder Week Update Diff (v{ITEMS_VERSION})"
+            desc_header = "Changelog for **Wonder Week 2026/2027 Event Activation**:\n"
+            patch_info = f"Wonder Week Update • items.dat v{ITEMS_VERSION}"
+        else:
+            old_items = ITEMS_CACHE[:16314]
+            new_items = ITEMS_CACHE[:16434]
+            diff = generate_items_diff(old_items, new_items)
+            title = "📊 Growtopia Latest Patch Diff"
+            desc_header = "Changelog for the **Latest Update** (IDs `#16314` – `#16433`):\n"
+            patch_info = f"Latest Patch • items.dat v{ITEMS_VERSION}"
 
     added = diff["added"]
     modified = diff["modified"]
@@ -524,10 +623,14 @@ async def cmd_diff(ctx, *, patch_name: str = "latest"):
 
     if modified:
         mod_lines = []
-        for m in modified[:8]:
+        main_mods = [m for m in modified if not m['name'].endswith('Seed')]
+        for m in main_mods[:10]:
             mod_lines.append(f"• `#{m['id']}` **{m['name']}**:\n  " + ", ".join(m['changes']))
+        seed_mods = [m for m in modified if m['name'].endswith('Seed')]
+        if seed_mods:
+            mod_lines.append(f"• *...plus `{len(seed_mods)}` corresponding event seed pairs updated!*")
         embed.add_field(
-            name=f"🔄 Rebalanced & Modified Items ({len(modified)})",
+            name=f"🔄 Activated & Modified Items ({len(modified)})",
             value="\n".join(mod_lines),
             inline=False
         )
@@ -535,7 +638,7 @@ async def cmd_diff(ctx, *, patch_name: str = "latest"):
     if not added and not modified:
         embed.description += "\n✨ **Everything matches! Zero unannounced changes or file modifications.**"
 
-    embed.set_footer(text=f"{patch_info} • Options: !diff latest, !diff previous, !diff live")
+    embed.set_footer(text=f"{patch_info} • Options: !diff latest, !diff wonderweek, !diff oct, !diff sep")
     await ctx.send(embed=embed)
 
 @bot.command(name="check")
@@ -601,72 +704,80 @@ async def auto_monitor():
     if not WATCHER_ENABLED or not os.path.exists(ITEMS_DAT_PATH):
         return
 
-    mtime = os.path.getmtime(ITEMS_DAT_PATH)
-    if mtime != LAST_MTIME and LAST_MTIME != 0:
-        print("[Auto-Monitor] items.dat modification detected!")
-        old_items = list(ITEMS_CACHE)
-        refresh_items()
-        new_items = ITEMS_CACHE
+    try:
+        mtime = os.path.getmtime(ITEMS_DAT_PATH)
+        if mtime != LAST_MTIME and LAST_MTIME != 0:
+            print("[Auto-Monitor] items.dat modification detected!")
+            old_items = list(ITEMS_CACHE)
+            if not refresh_items():
+                return
+            new_items = ITEMS_CACHE
 
-        # Compute diff against previous state
-        diff = generate_items_diff(old_items, new_items)
-        added = diff["added"]
-        modified = diff["modified"]
+            # Compute diff against previous state
+            diff = generate_items_diff(old_items, new_items)
+            added = diff["added"]
+            modified = diff["modified"]
 
-        if added or modified:
-            print(f"🚨 AUTO-MONITOR DETECTED CHANGES! {len(added)} added, {len(modified)} modified")
+            if added or modified:
+                print(f"🚨 AUTO-MONITOR DETECTED CHANGES! {len(added)} added, {len(modified)} modified")
 
-            embed = discord.Embed(
-                title="🚨 INSTANT LEAK: Growtopia Patch & Diff Detected!",
-                description=(
-                    f"**Ubisoft updated items.dat on your computer!**\n\n"
-                    f"• **🆕 New Items:** `{len(added)}`\n"
-                    f"• **🔄 Modified Items:** `{len(modified)}`\n"
-                    f"• **📦 Total Count:** `{len(new_items):,}` (v{ITEMS_VERSION})"
-                ),
-                color=0xff0044
-            )
-
-            if added:
-                lines = []
-                for it in added[:12]:
-                    if not it['name'].endswith('Seed'):
-                        lines.append(f"• `#{it['id']}` **{it['name']}** (Rarity `{it['rarity']}`)")
-
-                embed.add_field(
-                    name="📦 Newly Discovered Items",
-                    value="\n".join(lines) if lines else "New item slots added to database.",
-                    inline=False
+                embed = discord.Embed(
+                    title="🚨 INSTANT LEAK: Growtopia Patch & Diff Detected!",
+                    description=(
+                        f"**Ubisoft updated items.dat on your computer!**\n\n"
+                        f"• **🆕 New Items:** `{len(added)}`\n"
+                        f"• **🔄 Modified Items:** `{len(modified)}`\n"
+                        f"• **📦 Total Count:** `{len(new_items):,}` (v{ITEMS_VERSION})"
+                    ),
+                    color=0xff0044
                 )
 
-            if modified:
-                mod_lines = []
-                for m in modified[:6]:
-                    mod_lines.append(f"• `#{m['id']}` **{m['name']}**: " + ", ".join(m['changes']))
-                embed.add_field(
-                    name="🔄 Rebalanced / Modified Items",
-                    value="\n".join(mod_lines),
-                    inline=False
-                )
+                if added:
+                    lines = []
+                    for it in added[:12]:
+                        if not it['name'].endswith('Seed'):
+                            lines.append(f"• `#{it['id']}` **{it['name']}** (Rarity `{it['rarity']}`)")
 
-            save_snapshot(new_items)
-            embed.set_footer(text=f"Growtopia Real-Time Auto-Watcher • Total Items: {len(new_items):,}")
+                    embed.add_field(
+                        name="📦 Newly Discovered Items",
+                        value="\n".join(lines) if lines else "New item slots added to database.",
+                        inline=False
+                    )
 
-            if ALERT_CHANNEL_ID:
-                ch = bot.get_channel(ALERT_CHANNEL_ID)
-                if ch:
-                    try:
-                        await ch.send(embed=embed)
-                    except Exception as e:
-                        print(f"Error sending to alert channel: {e}")
-            else:
-                for guild in bot.guilds:
-                    target = guild.system_channel or (guild.text_channels[0] if guild.text_channels else None)
-                    if target:
+                if modified:
+                    mod_lines = []
+                    main_mods = [m for m in modified if not m['name'].endswith('Seed')]
+                    for m in main_mods[:10]:
+                        mod_lines.append(f"• `#{m['id']}` **{m['name']}**: " + ", ".join(m['changes']))
+                    seed_mods = [m for m in modified if m['name'].endswith('Seed')]
+                    if seed_mods:
+                        mod_lines.append(f"• *...plus `{len(seed_mods)}` corresponding event seeds updated!*")
+                    embed.add_field(
+                        name="🔄 Rebalanced / Modified Items",
+                        value="\n".join(mod_lines),
+                        inline=False
+                    )
+
+                save_snapshot(new_items)
+                embed.set_footer(text=f"Growtopia Real-Time Auto-Watcher • Total Items: {len(new_items):,}")
+
+                if ALERT_CHANNEL_ID:
+                    ch = bot.get_channel(ALERT_CHANNEL_ID)
+                    if ch:
                         try:
-                            await target.send(embed=embed)
+                            await ch.send(embed=embed)
                         except Exception as e:
-                            print(f"Error sending auto alert: {e}")
+                            print(f"Error sending to alert channel: {e}")
+                else:
+                    for guild in bot.guilds:
+                        target = guild.system_channel or (guild.text_channels[0] if guild.text_channels else None)
+                        if target:
+                            try:
+                                await target.send(embed=embed)
+                            except Exception as e:
+                                print(f"Error sending auto alert: {e}")
+    except Exception as e:
+        print(f"[Auto-Monitor Exception]: {e}")
 
 if __name__ == "__main__":
     print("Starting Growtopia Discord Bot...")
