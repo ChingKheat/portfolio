@@ -425,9 +425,9 @@ async def check_and_broadcast_updates(ctx_to_reply=None):
 
     return None
 
-@tasks.loop(hours=2)
+@tasks.loop(minutes=30)
 async def auto_hotfix_sync_loop():
-    """Periodically checks for silent server maintenance hotfixes in the background every 2 hours."""
+    """Periodically checks for silent server maintenance hotfixes in the background every 30 minutes."""
     if not WATCHER_ENABLED:
         return
     print("[Auto-Hotfix] Starting scheduled 2-hour background game sync...")
@@ -567,7 +567,8 @@ async def cmd_status(ctx):
             f"• **Status:** {status_text}\n"
             f"• **Alert Channel:** {ch_text}\n"
             f"• **Total Items Tracked:** `{len(ITEMS_CACHE):,}` (v{ITEMS_VERSION})\n"
-            f"• **Check Frequency:** Every 5 seconds"
+            f"• **Check Frequency:** Every 1 second (Instant Leak Alert)\n"
+            f"• **Server Background Sync:** Every 30 minutes"
         ),
         color=0x3498db
     )
@@ -1245,8 +1246,8 @@ async def cmd_textures(ctx):
     )
     await ctx.send(embed=embed)
 
-# 24/7 background watcher loop
-@tasks.loop(seconds=5)
+# 24/7 background watcher loop (1-second instant leak detection)
+@tasks.loop(seconds=1)
 async def auto_monitor():
     global LAST_MTIME
     if not WATCHER_ENABLED or not os.path.exists(ITEMS_DAT_PATH):
