@@ -151,6 +151,15 @@ def parse_itemsdat(filepath=ITEMS_DAT_PATH):
             "extra_str": extra_str
         })
 
+        # Future-proof boundary sync: If Ubisoft adds new bytes in future versions (v28, v29+),
+        # ensure pos cleanly aligns to the next sequential item ID without drifting or crashing.
+        if idx + 1 < item_count:
+            next_target = struct.pack("<i", idx + 1)
+            if pos + 4 <= len(data) and data[pos:pos+4] != next_target:
+                found = data.find(next_target, pos, pos + 64)
+                if found != -1:
+                    pos = found
+
     return version, items
 
 SNAPSHOT_FILE = os.path.join(SCRIPT_DIR, "items_snapshot.json")

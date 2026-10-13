@@ -58,6 +58,8 @@ with open(CONFIG_FILE, "r") as f:
 
 BOT_TOKEN = config.get("token")
 PREFIX = config.get("prefix", "!")
+WATCHER_ENABLED = True
+ALERT_CHANNEL_ID = config.get("alert_channel_id")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -129,6 +131,197 @@ async def perform_silent_sync(max_seconds=5):
     except Exception as e:
         return False, f"Error during silent sync: {e}"
 
+def categorize_items(item_list):
+    """Dynamically categorizes items by their in-game type and wearable slot."""
+    categories = {
+        "⚔️ Weapons & Hand Items": [],
+        "🪽 Wings, Capes & Back": [],
+        "🐎 Mounts & Shoes": [],
+        "👑 Hats, Hair & Faces": [],
+        "👕 Shirts, Pants & Suits": [],
+        "🔮 Auras, Pets & Artifacts": [],
+        "🧱 Placeables & Weather": [],
+        "🌱 Paired Seeds": [],
+        "📦 Other Items": []
+    }
+
+    for it in item_list:
+        name = it.get("name", "")
+        if name.endswith("Seed"):
+            categories["🌱 Paired Seeds"].append(it)
+            continue
+
+        body_part = it.get("body_part", 0)
+        item_type = it.get("item_type", 0)
+
+        if body_part == 5:
+            categories["⚔️ Weapons & Hand Items"].append(it)
+        elif body_part == 6:
+            categories["🪽 Wings, Capes & Back"].append(it)
+        elif body_part == 3:
+            categories["🐎 Mounts & Shoes"].append(it)
+        elif body_part in (4, 7):
+            categories["👑 Hats, Hair & Faces"].append(it)
+        elif body_part in (1, 2):
+            categories["👕 Shirts, Pants & Suits"].append(it)
+        elif body_part in (8, 9) or "aura" in name.lower() or "leash" in name.lower() or "pet" in name.lower():
+            categories["🔮 Auras, Pets & Artifacts"].append(it)
+        elif item_type in (2, 3, 41) or body_part == 0:
+            categories["🧱 Placeables & Weather"].append(it)
+        else:
+            categories["📦 Other Items"].append(it)
+
+    return {k: v for k, v in categories.items() if v}
+
+def format_item_line(it):
+    rarity = f"Rarity `{it.get('rarity', 0)}`" if it.get('rarity') else "Untradeable"
+    slot = BODY_PART_MAP.get(it.get("body_part", 0), "")
+    slot_str = f" *({slot})*" if slot and slot != "None / Block" else ""
+    line = f"• `#{it['id']}` **{it['name']}**{slot_str} — {rarity}"
+    if it.get("info"):
+        desc = it['info'].strip()
+        if len(desc) > 95:
+            desc = desc[:92] + "..."
+        line += f"\n  ╰ *\"{desc}\"*"
+    return line
+
+def add_chunked_field(embed, field_name, lines, max_per_field=1000):
+    chunk = []
+    chunk_len = 0
+    part = 1
+    for line in lines:
+        if chunk_len + len(line) + 1 > max_per_field:
+            embed.add_field(
+                name=f"{field_name} (Part {part})" if part > 1 else field_name,
+                value="\n".join(chunk),
+                inline=False
+            )
+            chunk = [line]
+            chunk_len = len(line)
+            part += 1
+        else:
+            chunk.append(line)
+            chunk_len += len(line) + 1
+    if chunk:
+        embed.add_field(
+            name=f"{field_name} (Part {part})" if part > 1 else field_name,
+            value="\n".join(chunk),
+            inline=False
+        )
+
+def build_leak_embed(diff, total_count, version, mtime_str, title="🚨 GROWTOPIA DATABASE UPDATE DETECTED!"):
+    """Builds a psychological, high-contrast, full-width Details Page embed for updates."""
+    added = diff.get("added", [])
+    modified = diff.get("modified", [])
+
+    embed = discord.Embed(
+        title=title,
+        description=(
+            f"> 📦 **Database Version:** `items.dat v{version}` • **Total:** `{total_count:,}` items\n"
+            f"> 📅 **Detected At:** `{mtime_str}`\n"
+            f"> 🆕 **New Items Discovered:** `{len(added)}`\n"
+            f"> 🔄 **Rebalanced / Unveiled Items:** `{len(modified)}`\n\n"
+            "```yaml\n"
+            "📊 Summary: Live game files were updated with newly datamined content!\n"
+            "```"
+        ),
+        color=0xFF0044
+    )
+
+    if added:
+        cats = categorize_items(added)
+        for cat_name, cat_items in cats.items():
+            if cat_name == "🌱 Paired Seeds":
+                seed_strs = [f"`{s['id']}` {s['name']}" for s in cat_items[:12]]
+                val = " • ".join(seed_strs)
+                if len(cat_items) > 12:
+                    val += f" • *...plus {len(cat_items) - 12} more seeds*"
+                embed.add_field(name=f"{cat_name} ({len(cat_items)})", value=val, inline=False)
+            else:
+                lines = [format_item_line(it) for it in cat_items[:12]]
+                if len(cat_items) > 12:
+                    lines.append(f"• *...plus `{len(cat_items) - 12}` more items in this slot!*")
+                add_chunked_field(embed, f"{cat_name} ({len(cat_items)})", lines)
+
+    if modified:
+        main_mods = [m for m in modified if not m['name'].endswith('Seed')]
+        if main_mods:
+            mod_lines = []
+            for m in main_mods[:25]:
+                mod_lines.append(f"• `#{m['id']}` **{m['name']}**:\n  ╰ " + ", ".join(m['changes']))
+            if len(main_mods) > 25:
+                mod_lines.append(f"• *...plus `{len(main_mods) - 25}` more modified items!*")
+            add_chunked_field(embed, f"🔄 Unveiled / Rebalanced Items ({len(main_mods)})", mod_lines)
+        seed_mods = [m for m in modified if m['name'].endswith('Seed')]
+        if seed_mods:
+            embed.add_field(
+                name=f"🌱 Seed Changes ({len(seed_mods)})",
+                value=f"• `{len(seed_mods)}` event seeds activated/updated alongside their main items.",
+                inline=False
+            )
+
+    embed.set_footer(text=f"Growtopia Instant Watcher • Total: {total_count:,} items • Type !item <name or ID>")
+    return embed
+
+async def check_and_broadcast_updates(ctx_to_reply=None):
+    """
+    Universal update checker:
+    Compares live items against items_snapshot.json.
+    If ANY changes exist, broadcasts to ALERT_CHANNEL_ID and updates snapshot.
+    """
+    global LAST_MTIME, ITEMS_CACHE, ITEMS_VERSION, LAST_COUNT
+
+    if not os.path.exists(ITEMS_DAT_PATH):
+        return None
+
+    snapshot = load_snapshot()
+    if not refresh_items():
+        return None
+
+    import datetime
+    mtime = os.path.getmtime(ITEMS_DAT_PATH)
+    mtime_str = datetime.datetime.fromtimestamp(mtime).strftime("%b %d, %Y at %I:%M:%S %p")
+
+    if not snapshot:
+        save_snapshot(ITEMS_CACHE)
+        print("[Auto-Monitor] Initial baseline snapshot saved.")
+        return None
+
+    diff = generate_items_diff(snapshot, ITEMS_CACHE)
+    added = diff.get("added", [])
+    modified = diff.get("modified", [])
+
+    if added or modified:
+        print(f"🚨 [BROADCAST] Detected {len(added)} added and {len(modified)} modified items!")
+        embed = build_leak_embed(diff, len(ITEMS_CACHE), ITEMS_VERSION, mtime_str)
+
+        # Broadcast to alert channel (#data)
+        if ALERT_CHANNEL_ID:
+            ch = bot.get_channel(ALERT_CHANNEL_ID)
+            if not ch:
+                try:
+                    ch = await bot.fetch_channel(ALERT_CHANNEL_ID)
+                except Exception as e:
+                    print(f"Error fetching alert channel: {e}")
+            if ch:
+                try:
+                    await ch.send(embed=embed)
+                except Exception as e:
+                    print(f"Error sending update embed: {e}")
+
+        # Also reply to command sender if called via !sync or !check
+        if ctx_to_reply and ctx_to_reply.channel.id != ALERT_CHANNEL_ID:
+            try:
+                await ctx_to_reply.send(embed=embed)
+            except Exception:
+                pass
+
+        # Update snapshot to the new baseline so it doesn't alert repeatedly
+        save_snapshot(ITEMS_CACHE)
+        return diff
+
+    return None
+
 @tasks.loop(hours=2)
 async def auto_hotfix_sync_loop():
     """Periodically checks for silent server maintenance hotfixes in the background every 2 hours."""
@@ -137,6 +330,8 @@ async def auto_hotfix_sync_loop():
     print("[Auto-Hotfix] Starting scheduled 2-hour background game sync...")
     success, msg = await perform_silent_sync(max_seconds=5)
     print(f"[Auto-Hotfix] Result: {msg}")
+    if success:
+        await check_and_broadcast_updates()
 
 @bot.event
 async def on_ready():
@@ -145,6 +340,11 @@ async def on_ready():
     print(f" Ready to respond to commands ({PREFIX}latest, {PREFIX}diff, {PREFIX}item, {PREFIX}sync, {PREFIX}help)")
     print(f"==================================================")
     refresh_items()
+
+    # CHECK FOR UPDATES IMMEDIATELY ON BOOT:
+    # Catches any update that happened while the bot was offline or restarting
+    await check_and_broadcast_updates()
+
     if not auto_monitor.is_running():
         auto_monitor.start()
     if not auto_hotfix_sync_loop.is_running():
@@ -155,7 +355,7 @@ async def on_ready():
         try:
             channel = bot.get_channel(ALERT_CHANNEL_ID)
             if channel:
-                await channel.send("🟢 **Growtopia Dataminer is ONLINE!** Ready for commands (`!latest`, `!start`, `!diff`, `!sync`).")
+                await channel.send("🟢 **Growtopia Dataminer is ONLINE & MONITORING 24/7!** Ready for commands (`!latest`, `!diff`, `!sync`, `!item`).")
         except Exception as e:
             print(f"Error announcing online: {e}")
 
@@ -179,9 +379,6 @@ async def on_message(message):
     else:
         await bot.process_commands(message)
 
-WATCHER_ENABLED = True
-ALERT_CHANNEL_ID = config.get("alert_channel_id")
-
 @bot.command(name="help")
 async def cmd_help(ctx):
     embed = discord.Embed(
@@ -189,14 +386,13 @@ async def cmd_help(ctx):
         description="Type any of these commands in this channel:",
         color=0x3498db
     )
-    embed.add_field(name=f"`{PREFIX}start`", value="Activate real-time auto-watching and send the latest items here!", inline=False)
-    embed.add_field(name=f"`{PREFIX}wonderweek` *(or `{PREFIX}ww`)*", value="Show all datamined items & leaks for Wonder Week!", inline=False)
-    embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game items from the latest patch.", inline=False)
-    embed.add_field(name=f"`{PREFIX}diff`", value="Show the patch changelog (new & modified/rebalanced items).", inline=False)
-    embed.add_field(name=f"`{PREFIX}sync`", value="Silently check for server maintenance hotfixes right now.", inline=False)
-    embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16400`).", inline=False)
-    embed.add_field(name=f"`{PREFIX}check`", value="Check if a new game update is available right now.", inline=False)
-    embed.add_field(name=f"`{PREFIX}status`", value="Check if the real-time watcher is active.", inline=False)
+    embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game additions & leaked items from the latest patch.", inline=False)
+    embed.add_field(name=f"`{PREFIX}diff`", value="Show the patch changelog & diff against baseline snapshot (or `!diff 25`).", inline=False)
+    embed.add_field(name=f"`{PREFIX}check`", value="Scan local and Ubisoft game files for new updates right now.", inline=False)
+    embed.add_field(name=f"`{PREFIX}sync`", value="Silently check Ubisoft servers for new patches & hotfixes.", inline=False)
+    embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16400`) for stats & 128x128 sprite.", inline=False)
+    embed.add_field(name=f"`{PREFIX}start`", value="Lock automatic update alerts to this channel and start 24/7 monitoring.", inline=False)
+    embed.add_field(name=f"`{PREFIX}status`", value="Check if the real-time background watcher is active.", inline=False)
     embed.add_field(name=f"`{PREFIX}stop`", value="Pause automatic leak alerts.", inline=False)
     embed.set_footer(text=f"Prefix: {PREFIX} • Total Items Tracked: {len(ITEMS_CACHE):,}")
     await ctx.send(embed=embed)
@@ -257,199 +453,72 @@ async def cmd_status(ctx):
 
 @bot.command(name="latest")
 async def cmd_latest(ctx):
+    """
+    Dynamically displays the latest in-game additions from items.dat,
+    categorized by gameplay slot (Weapons, Mounts, Wings, Hats, Costumes, etc.).
+    Completely dynamic for all future updates.
+    """
     if not ITEMS_CACHE:
         refresh_items()
 
     import datetime
-    mtime_str = "Oct 13, 2026"
+    mtime_str = "Recently"
     if os.path.exists(ITEMS_DAT_PATH):
         mtime = os.path.getmtime(ITEMS_DAT_PATH)
         mtime_str = datetime.datetime.fromtimestamp(mtime).strftime("%b %d, %Y at %I:%M %p")
 
+    # Dynamically select the newest non-seed items from the database
+    non_seeds = [it for it in ITEMS_CACHE if not it['name'].endswith('Seed') and 'null_item' not in it['name']]
+    newest_items = non_seeds[-35:] if len(non_seeds) >= 35 else non_seeds
+    start_id = newest_items[0]['id'] if newest_items else 0
+    end_id = newest_items[-1]['id'] if newest_items else 0
+
     embed = discord.Embed(
-        title="✨ Growtopia Latest Patch & Wonder Week Leaks",
+        title="✨ Growtopia Latest In-Game Items Directory",
         description=(
-            f"> 📅 **Database Synced:** `{mtime_str}` • **Format:** `items.dat v{ITEMS_VERSION}`\n"
-            f"> 🌟 **Active Event:** **Wonder Week 2026/2027** (15 Secret Slots Unlocked!)\n"
-            f"> 📦 **Total Datamined Range:** `120 Items` (IDs `#16314` – `#16433`)\n\n"
+            f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total Items:** `{len(ITEMS_CACHE):,}`\n"
+            f"> 📅 **Last Synced:** `{mtime_str}`\n"
+            f"> 🔍 **Latest Datamined Range:** IDs `#{start_id}` through `#{end_id}`\n\n"
             "```yaml\n"
-            "📊 Latest Database Breakdown\n"
-            "  • 15 Wonder Week : All event items unlocked from secret slots (#16396-#16425)\n"
-            "  • 5  Immortal    : Sonic Buster Katana, Pickaxe, Title, Puppy Leash, NVG\n"
-            "  • 40 Autumn/Clash: Royal Armor, Shadow-You, Fall Witch, Auras & Pets\n"
-            "  • 60 Paired Seeds: Full seed pairs for every placeable/wearable item\n"
+            "📊 Latest In-Game Additions (Categorized by Gameplay Slot)\n"
             "```"
         ),
-        color=0xF1C40F
+        color=0x5865F2
     )
 
-    embed.add_field(
-        name="🌟 Wonder Week Exclusives (15 Unlocked Items!)",
-        value=(
-            "`16400` **Mecha Tank** *(Mount / Feet)* • `16406` **WM - Paradise City** *(Placeable)*\n"
-            "`16398` **Lightning Nunchucks** *(Hand)* • `16396` **Atom Constructs** *(Hand)*\n"
-            "`16402` **Pariah's Shawl** *(Back / Cape)* • `16404` **Super Stingers** *(Back / Wings)*\n"
-            "`16408` **Winged Hair** *(Hair)* • `16424` **Winged Hair Hat** *(Hat)*\n"
-            "`16412` **Atom Suit** *(Shirt)* • `16410` **Atom Shorts** *(Pants)*\n"
-            "`16414` **Lightning Nunchucks Mask** • `16418` **Pariah's Mask**\n"
-            "`16416` **Mecha Tank's Birds** • `16420` **Super Stingers Belt** • `16422` **Paradise Watch**\n"
-            "💡 *Type `!wonderweek` (or `!ww`) for individual lore, stats & lock dates!*"
-        ),
-        inline=False
-    )
+    cats = categorize_items(newest_items)
+    for cat_name, cat_items in cats.items():
+        if cat_name != "🌱 Paired Seeds":
+            lines = [format_item_line(it) for it in cat_items]
+            add_chunked_field(embed, f"{cat_name} ({len(cat_items)})", lines)
 
-    embed.add_field(
-        name="⚔️ Immortal Collection (5 Items)",
-        value=(
-            "`16428` **Sonic Buster Katana** *(Hand / Weapon)*\n"
-            "`16426` **Immortal Pickaxe** *(Hand / Tool)*\n"
-            "`16432` **Immortal Puppy Leash** *(Hand / Pet)*\n"
-            "`16430` **Immortal Title** *(Achievement / Honor)*\n"
-            "`16340` **Night Vision Goggles** *(Face / Mask)*"
-        ),
-        inline=False
-    )
+    embed.set_footer(text=f"Total: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
 
-    embed.add_field(
-        name="👑 Domination & Royal Gear (6 Items)",
-        value=(
-            "`16388` **Royal Domination Armor** *(Chest / Body)*\n"
-            "`16386` **Domination Armor** *(Chest / Body)*\n"
-            "`16384` **Shadow-You** *(Dark Clone Aura / Back)*\n"
-            "`16394` **Drape Coat** *(Cape / Back)*\n"
-            "`16390` **Sharp Wrench Style** *(Tool Skin)*\n"
-            "`16392` **Sharp Wrench Decoration** *(Placeable)*"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="🍂 Fall & Autumn Event (11 Items)",
-        value=(
-            "`16370` **Fall Witch's Hat** *(Head)* • `16372` **Coat** • `16374` **Pants**\n"
-            "`16362` **Halo of Autumn Leaves** *(Back / Aura)* • `16364` **Mantle of Corn**\n"
-            "`16366` **Sheep Chariot** *(Mount / Feet)*\n"
-            "`16376` **Gazebo Base** • `16378` **Gazebo Roof**\n"
-            "`16368` **Arched Bridge** • `16380` **Lake Lantern** • `16382` **Corn Field**"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="✂️ Hairstyles, Hats & Exclusives (13 Items)",
-        value=(
-            "`16354` **Wolf Cut Hair** • `16352` **Tied Anime Bun** • `16350` **Tanuki Ears**\n"
-            "`16348` **Orca Hood** • `16346` **Horns of Calamity** • `16344` **Blue Rose Bowler Hat**\n"
-            "`16314` **Spiezels' Galactic Scarf** • `16316` **swiftpie's Aura-Mantle** • `16360` **Farmer Aura**\n"
-            "`16318` **Xenoso's Nebulafin** • `16320` **Nebulafin Leash** • `16342` **Bingo**"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="😀 Growmojis & Mystery Crate (9 Items)",
-        value=(
-            "`16322`–`16336` **8 Growmojis:** 🔥 Fire • 😏 Flirty • 💡 Light Bulb • 🤑 Money\n"
-            "╰ 🤓 Nerd • 💀 Skull • 🏆 Trophy • 🥀 Wilted Flower\n"
-            "`16356` **Voucher Dayz Growmoji Mystery Crate**"
-        ),
-        inline=False
-    )
-
-    embed.set_footer(text=f"Total Tracked: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
-
-    # Attach preview if available
     cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
     if os.path.exists(cosmetics_png):
         file = discord.File(cosmetics_png, filename="player_cosmetics4.png")
-        embed.set_image(url="attachment://player_cosmetics4.png")
+        embed.set_thumbnail(url="attachment://player_cosmetics4.png")
         await ctx.send(embed=embed, file=file)
     else:
         await ctx.send(embed=embed)
 
-@bot.command(name="wonderweek", aliases=["ww", "wonder", "wonderleaks"])
+@bot.command(name="wonderweek", aliases=["ww"])
 async def cmd_wonderweek(ctx):
+    """Filter helper for Wonder Week items."""
     if not ITEMS_CACHE:
         refresh_items()
-
+    ww_items = [it for it in ITEMS_CACHE if 16396 <= it['id'] <= 16425 and not it['name'].endswith('Seed')]
     embed = discord.Embed(
-        title="🌟 Wonder Week Event • Exclusive Leak Directory",
-        description=(
-            f"> 📅 **Event:** Wonder Week 2026/2027 • Database: `items.dat v{ITEMS_VERSION}`\n"
-            f"> 🔓 **15 Exclusive Event Items & 15 Paired Seeds Unveiled!**\n\n"
-            "```yaml\n"
-            "🌟 Wonder Week Datamined Items (IDs #16396 – #16425)\n"
-            "  • Weapons / Tech: Lightning Nunchucks, Atom Constructs, WM Paradise City\n"
-            "  • Mounts / Wings: Mecha Tank, Super Stingers, Pariah's Shawl\n"
-            "  • Costumes / Set: Winged Hair & Hat, Atom Suit & Shorts, Mask Sets\n"
-            "```"
-        ),
+        title="🌟 Wonder Week Event Items Directory",
+        description=f"Showing all **{len(ww_items)} event items** from IDs `#16396` – `#16425`:\n",
         color=0xF1C40F
     )
-
-    embed.add_field(
-        name="⚡ Weapons, Technology & Placeables (4 Items)",
-        value=(
-            "`16398` **Lightning Nunchucks** *(Hand / Weapon)*\n"
-            "╰ *\"Join the world's most fearsome fighting team! Untradeable until 18 Feb 2027.\"*\n"
-            "`16396` **Atom Constructs** *(Hand / Weapon)*\n"
-            "╰ *\"Feel invincible with the molecular power of the Atom Constructs!\"*\n"
-            "`16406` **Weather Machine - Paradise City** *(Placeable / Weather)*\n"
-            "╰ *\"Head down to the Paradise City! Untradeable until 18 Feb 2027.\"*\n"
-            "`16422` **Paradise Watch** *(Hand / Bling)*\n"
-            "╰ *\"Show off your bling! No Ultimate Edition required!\"*"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="🤖 Mecha Tank, Mounts & Wings (5 Items)",
-        value=(
-            "`16400` **Mecha Tank** *(Mount / Feet)*\n"
-            "╰ *\"Pilot a mech AND a tank! Best of both worlds 'tanks' to Mecha Tank!\"*\n"
-            "`16402` **Pariah's Shawl** *(Back / Cape)*\n"
-            "╰ *\"Become one with the desert! Alternates between two styles!\"*\n"
-            "`16404` **Super Stingers** *(Back / Wings & Blades)*\n"
-            "╰ *\"Stab your foes with the sharp blades of the Super Stingers!\"*\n"
-            "`16416` **Mecha Tank's Birds** *(Artifact / Ances)* • *\"Birds... nuff said!\"*\n"
-            "`16420` **Super Stingers Belt** *(Artifact / Belt)* • *\"Training Wheels Protocol\"*"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="👑 Costumes, Hairstyles & Masks (6 Items)",
-        value=(
-            "`16408` **Winged Hair** *(Hair)* • *\"Give Rapunzel some competition!\"*\n"
-            "`16424` **Winged Hair Hat** *(Hat)* • *\"Matching hat for Winged Hair.\"*\n"
-            "`16412` **Atom Suit** *(Shirt)* • `16410` **Atom Shorts** *(Pants)*\n"
-            "`16414` **Lightning Nunchucks Mask** *(Face)* • *\"Hide your secret identity!\"*\n"
-            "`16418` **Pariah's Mask** *(Face)* • *\"Death answers to you! For you are doom!\"*"
-        ),
-        inline=False
-    )
-
-    embed.add_field(
-        name="🌱 Paired Wonder Week Seeds (15 Seeds)",
-        value=(
-            "`16397` Atom Constructs Seed • `16399` Lightning Nunchucks Seed\n"
-            "`16401` Mecha Tank Seed • `16403` Pariah's Shawl Seed • `16405` Super Stingers Seed\n"
-            "`16407` WM Paradise City Seed • `16409` Winged Hair Seed • `16411` Atom Shorts Seed\n"
-            "`16413` Atom Suit Seed • `16415` Nunchucks Mask Seed • `16417` Tank Birds Seed\n"
-            "`16419` Pariah Mask Seed • `16421` Stingers Belt Seed • `16423` Watch Seed • `16425` Hat Seed"
-        ),
-        inline=False
-    )
-
-    embed.set_footer(text=f"Database: items.dat v{ITEMS_VERSION} ({len(ITEMS_CACHE):,} items) • Type !item <name or ID> for 128x128 sprite & stats")
-
-    cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
-    if os.path.exists(cosmetics_png):
-        file = discord.File(cosmetics_png, filename="player_cosmetics4.png")
-        embed.set_image(url="attachment://player_cosmetics4.png")
-        await ctx.send(embed=embed, file=file)
-    else:
-        await ctx.send(embed=embed)
+    cats = categorize_items(ww_items)
+    for cat_name, cat_items in cats.items():
+        lines = [format_item_line(it) for it in cat_items]
+        add_chunked_field(embed, f"{cat_name} ({len(cat_items)})", lines)
+    embed.set_footer(text=f"Type !item <name or ID> for 128x128 sprite preview • Total Database: {len(ITEMS_CACHE):,}")
+    await ctx.send(embed=embed)
 
 @bot.command(name="item", aliases=["search", "find"])
 async def cmd_item(ctx, *, query: str = None):
@@ -496,11 +565,13 @@ async def cmd_item(ctx, *, query: str = None):
     elif item.get("break_hits", 0) > 0:
         embed.add_field(name="Hardness", value=f"`{item['break_hits']} hits`", inline=True)
 
-    # Release date estimation based on ID ranges
-    if item['id'] >= 16314:
-        embed.add_field(name="Release Date", value="`October 5, 2026 (v5.59)`", inline=True)
+    # Release date / era estimation
+    if item['id'] >= len(ITEMS_CACHE) - 50:
+        embed.add_field(name="Release Era", value="`Latest Patch / New Leaks`", inline=True)
+    elif item['id'] >= 16314:
+        embed.add_field(name="Release Era", value="`Recent Patch (v5.59+)`", inline=True)
     elif item['id'] >= 16200:
-        embed.add_field(name="Release Date", value="`September 2026 (v5.58)`", inline=True)
+        embed.add_field(name="Release Era", value="`Patch v5.58`", inline=True)
     else:
         embed.add_field(name="Release Era", value="`Legacy Release`", inline=True)
 
@@ -540,121 +611,106 @@ async def cmd_diff(ctx, *, patch_name: str = "latest"):
     """
     Shows patch diffs and changelogs.
     Options:
-    - !diff (or !diff latest / !diff oct) -> Shows October 5, 2026 (v5.59) changelog (+120 items)
-    - !diff previous (or !diff sep / !diff 5.58) -> Shows September 2026 (v5.58) changelog (+114 items)
-    - !diff live -> Checks live local game files against baseline snapshot
+    - !diff (or !diff latest) -> Compares live database against snapshot baseline
+    - !diff <number> (e.g. !diff 25) -> Shows changelog for the newest N items
     """
     if not ITEMS_CACHE:
         refresh_items()
 
-    target = patch_name.strip().lower()
+    import datetime
+    mtime_str = "Recently"
+    if os.path.exists(ITEMS_DAT_PATH):
+        mtime = os.path.getmtime(ITEMS_DAT_PATH)
+        mtime_str = datetime.datetime.fromtimestamp(mtime).strftime("%b %d, %Y at %I:%M %p")
 
-    if target in ["live", "current", "now"]:
-        snapshot = load_snapshot()
-        if not snapshot:
-            save_snapshot(ITEMS_CACHE)
-            await ctx.send("ℹ️ No previous baseline found. Current database saved as the baseline snapshot!")
-            return
+    q = patch_name.strip().lower()
 
-        diff = generate_items_diff(snapshot, ITEMS_CACHE)
-        title = "📊 Growtopia Live Watcher Diff"
-        desc_header = "Comparing live game files right now against baseline snapshot:\n"
-        patch_info = "Live PC Watcher"
-    elif target in ["previous", "sep", "september", "5.58", "v5.58", "old"]:
-        # September 2026 patch: IDs #16200 to #16313
-        old_items = ITEMS_CACHE[:16200]
-        new_items = ITEMS_CACHE[:16314]
-        diff = generate_items_diff(old_items, new_items)
-        title = "📊 Growtopia September 2026 Patch Diff (v5.58)"
-        desc_header = "Changelog for the **September 2026 Update** (IDs `#16200` – `#16313`):\n"
-        patch_info = "Patch v5.58 (September 2026)"
-    elif target in ["october", "oct", "5.59", "v5.59", "clash"]:
-        old_items = ITEMS_CACHE[:16314]
-        new_items = ITEMS_CACHE[:16434]
-        diff = generate_items_diff(old_items, new_items)
-        title = "📊 Growtopia October Patch Diff (v5.59 — October 5, 2026)"
-        desc_header = "Changelog for the **October 5, 2026 Clash Season Update** (IDs `#16314` – `#16433`):\n"
-        patch_info = "Patch v5.59 (October 5, 2026)"
+    # If query is a number, e.g. !diff 25
+    if q.isdigit():
+        count = max(1, min(int(q), 100))
+        non_seeds = [it for it in ITEMS_CACHE if not it['name'].endswith('Seed') and 'null_item' not in it['name']]
+        slice_items = non_seeds[-count:] if len(non_seeds) >= count else non_seeds
+        fake_diff = {"added": slice_items, "modified": [], "removed": []}
+        embed = build_leak_embed(
+            fake_diff, len(ITEMS_CACHE), ITEMS_VERSION, mtime_str,
+            title=f"📊 Growtopia Changelog (Last {len(slice_items)} Items)"
+        )
+        embed.description = (
+            f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total:** `{len(ITEMS_CACHE):,}` items\n"
+            f"> 📅 **Synced At:** `{mtime_str}`\n"
+            f"> 🔍 **Inspecting:** Last `{len(slice_items)}` non-seed item additions\n\n"
+            "```yaml\n"
+            f"📊 Displaying the newest {len(slice_items)} items added to Growtopia:\n"
+            "```"
+        )
+        await ctx.send(embed=embed)
+        return
+
+    # Check live database against baseline snapshot
+    snapshot = load_snapshot()
+    if not snapshot:
+        save_snapshot(ITEMS_CACHE)
+        snapshot = ITEMS_CACHE
+
+    diff = generate_items_diff(snapshot, ITEMS_CACHE)
+    added = diff.get("added", [])
+    modified = diff.get("modified", [])
+
+    if added or modified:
+        embed = build_leak_embed(
+            diff, len(ITEMS_CACHE), ITEMS_VERSION, mtime_str,
+            title=f"📊 Growtopia Patch Diff & Changelog (v{ITEMS_VERSION})"
+        )
+        await ctx.send(embed=embed)
     else:
-        # Default / Wonder Week: Compare baseline snapshot against live v27 items
-        snapshot = load_snapshot()
-        if snapshot:
-            diff = generate_items_diff(snapshot, ITEMS_CACHE)
-            title = f"📊 Growtopia Wonder Week Update Diff (v{ITEMS_VERSION})"
-            desc_header = "Changelog for **Wonder Week 2026/2027 Event Activation**:\n"
-            patch_info = f"Wonder Week Update • items.dat v{ITEMS_VERSION}"
-        else:
-            old_items = ITEMS_CACHE[:16314]
-            new_items = ITEMS_CACHE[:16434]
-            diff = generate_items_diff(old_items, new_items)
-            title = "📊 Growtopia Latest Patch Diff"
-            desc_header = "Changelog for the **Latest Update** (IDs `#16314` – `#16433`):\n"
-            patch_info = f"Latest Patch • items.dat v{ITEMS_VERSION}"
-
-    added = diff["added"]
-    modified = diff["modified"]
-
-    embed = discord.Embed(
-        title=title,
-        description=(
-            f"{desc_header}\n"
-            f"• **🆕 New Items Added:** `{len(added)}`\n"
-            f"• **🔄 Items Rebalanced / Modified:** `{len(modified)}`\n"
-            f"• **📦 Total Database:** `{len(ITEMS_CACHE):,}` items (v{ITEMS_VERSION})\n"
-        ),
-        color=0x3498db
-    )
-
-    if added:
-        top_added = [
-            f"• `#{it['id']}` **{it['name']}** (Rarity `{it['rarity']}`)"
-            for it in added if not it['name'].endswith('Seed') and 'null_item' not in it['name']
-        ][:12]
-        unreleased_count = sum(1 for it in added if 'null_item' in it['name'])
-        added_text = "\n".join(top_added)
-        if unreleased_count > 0:
-            added_text += f"\n• *...plus `{unreleased_count}` unreleased event placeholder items!*"
-
-        embed.add_field(
-            name=f"✨ Key New Additions ({len(added)} total)",
-            value=added_text if top_added else f"{len(added)} new items",
-            inline=False
+        # Zero unannounced changes: show confirmation and guide user
+        embed = discord.Embed(
+            title=f"📊 Growtopia Patch Diff (v{ITEMS_VERSION})",
+            description=(
+                f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total Items:** `{len(ITEMS_CACHE):,}`\n"
+                f"> 📅 **Last Synced:** `{mtime_str}`\n\n"
+                f"✅ **Database is 100% current with the latest snapshot.** Zero unannounced changes detected.\n\n"
+                f"💡 *Tip: Type `{PREFIX}latest` to view the newest in-game items, or `{PREFIX}diff <number>` (e.g. `{PREFIX}diff 25`) to inspect the newest additions.*"
+            ),
+            color=0x3498db
         )
-
-    if modified:
-        mod_lines = []
-        main_mods = [m for m in modified if not m['name'].endswith('Seed')]
-        for m in main_mods[:10]:
-            mod_lines.append(f"• `#{m['id']}` **{m['name']}**:\n  " + ", ".join(m['changes']))
-        seed_mods = [m for m in modified if m['name'].endswith('Seed')]
-        if seed_mods:
-            mod_lines.append(f"• *...plus `{len(seed_mods)}` corresponding event seed pairs updated!*")
-        embed.add_field(
-            name=f"🔄 Activated & Modified Items ({len(modified)})",
-            value="\n".join(mod_lines),
-            inline=False
-        )
-
-    if not added and not modified:
-        embed.description += "\n✨ **Everything matches! Zero unannounced changes or file modifications.**"
-
-    embed.set_footer(text=f"{patch_info} • Options: !diff latest, !diff wonderweek, !diff oct, !diff sep")
-    await ctx.send(embed=embed)
+        embed.set_footer(text=f"Total Database: {len(ITEMS_CACHE):,} items • Real-Time Watcher Active")
+        await ctx.send(embed=embed)
 
 @bot.command(name="check")
 async def cmd_check(ctx):
-    old_count = len(ITEMS_CACHE)
-    refresh_items()
-    new_count = len(ITEMS_CACHE)
+    """
+    Manually checks local items.dat and tests against baseline snapshot.
+    If an update is found, broadcasts the full details page!
+    """
+    if not os.path.exists(ITEMS_DAT_PATH):
+        await ctx.send("❌ `items.dat` not found on local machine.")
+        return
 
-    if new_count > old_count:
-        diff = new_count - old_count
-        await ctx.send(f"🚨 **NEW UPDATE DETECTED!** `{diff}` new items were added! Type `{PREFIX}latest` to view them!")
-    else:
-        await ctx.send(f"✅ Database is up to date. Currently tracking **{new_count:,} items** (v{ITEMS_VERSION}).")
+    diff = await check_and_broadcast_updates(ctx_to_reply=ctx)
+    if not diff:
+        import datetime
+        mtime = os.path.getmtime(ITEMS_DAT_PATH)
+        mtime_str = datetime.datetime.fromtimestamp(mtime).strftime("%b %d, %Y at %I:%M %p")
+        embed = discord.Embed(
+            title="✅ Growtopia Database Is Up To Date",
+            description=(
+                f"• **Database Version:** `items.dat v{ITEMS_VERSION}`\n"
+                f"• **Total Items Tracked:** `{len(ITEMS_CACHE):,}` items\n"
+                f"• **Last File Modified:** `{mtime_str}`\n"
+                f"• **Status:** No new patches or leaks detected. The 24/7 watcher is actively listening every 5 seconds."
+            ),
+            color=0x2ecc71
+        )
+        embed.set_footer(text=f"Type {PREFIX}latest to view newest items • Type {PREFIX}sync to check Ubisoft servers")
+        await ctx.send(embed=embed)
 
 @bot.command(name="sync", aliases=["fetch", "hotfix"])
 async def cmd_sync(ctx):
+    """
+    Fast-syncs with Ubisoft servers by silently booting Growtopia in the background for 4-5s,
+    checking if an update downloads, and broadcasting if changes are found.
+    """
     status_msg = await ctx.send("⚡ **Fast-syncing with Ubisoft servers...** Checking in the background (4-5s)...")
     old_mtime = os.path.getmtime(ITEMS_DAT_PATH) if os.path.exists(ITEMS_DAT_PATH) else 0
 
@@ -663,11 +719,11 @@ async def cmd_sync(ctx):
         await status_msg.edit(content=f"⚠️ {msg}")
         return
 
-    new_mtime = os.path.getmtime(ITEMS_DAT_PATH) if os.path.exists(ITEMS_DAT_PATH) else 0
-    if new_mtime != old_mtime and old_mtime != 0:
-        await status_msg.edit(content="🚨 **NEW HOTFIX DETECTED!** Game files were updated during sync! Computing changelog...")
+    diff = await check_and_broadcast_updates(ctx_to_reply=ctx)
+    if diff:
+        await status_msg.edit(content="🚨 **NEW UPDATE / HOTFIX DETECTED!** Broadcast sent below!")
     else:
-        await status_msg.edit(content=f"✅ **Sync complete!** Your game database is 100% current with the latest Ubisoft servers (`{len(ITEMS_CACHE):,}` items).")
+        await status_msg.edit(content=f"✅ **Sync complete!** Your game database is 100% current with Ubisoft servers (`{len(ITEMS_CACHE):,}` items, v{ITEMS_VERSION}). Zero unannounced updates detected.")
 
 @bot.command(name="texture")
 async def cmd_texture(ctx, *, tex_name: str = None):
@@ -700,82 +756,16 @@ async def cmd_texture(ctx, *, tex_name: str = None):
 # 24/7 background watcher loop
 @tasks.loop(seconds=5)
 async def auto_monitor():
-    global LAST_MTIME, LAST_COUNT, ITEMS_CACHE
+    global LAST_MTIME
     if not WATCHER_ENABLED or not os.path.exists(ITEMS_DAT_PATH):
         return
 
     try:
         mtime = os.path.getmtime(ITEMS_DAT_PATH)
-        if mtime != LAST_MTIME and LAST_MTIME != 0:
-            print("[Auto-Monitor] items.dat modification detected!")
-            old_items = list(ITEMS_CACHE)
-            if not refresh_items():
-                return
-            new_items = ITEMS_CACHE
-
-            # Compute diff against previous state
-            diff = generate_items_diff(old_items, new_items)
-            added = diff["added"]
-            modified = diff["modified"]
-
-            if added or modified:
-                print(f"🚨 AUTO-MONITOR DETECTED CHANGES! {len(added)} added, {len(modified)} modified")
-
-                embed = discord.Embed(
-                    title="🚨 INSTANT LEAK: Growtopia Patch & Diff Detected!",
-                    description=(
-                        f"**Ubisoft updated items.dat on your computer!**\n\n"
-                        f"• **🆕 New Items:** `{len(added)}`\n"
-                        f"• **🔄 Modified Items:** `{len(modified)}`\n"
-                        f"• **📦 Total Count:** `{len(new_items):,}` (v{ITEMS_VERSION})"
-                    ),
-                    color=0xff0044
-                )
-
-                if added:
-                    lines = []
-                    for it in added[:12]:
-                        if not it['name'].endswith('Seed'):
-                            lines.append(f"• `#{it['id']}` **{it['name']}** (Rarity `{it['rarity']}`)")
-
-                    embed.add_field(
-                        name="📦 Newly Discovered Items",
-                        value="\n".join(lines) if lines else "New item slots added to database.",
-                        inline=False
-                    )
-
-                if modified:
-                    mod_lines = []
-                    main_mods = [m for m in modified if not m['name'].endswith('Seed')]
-                    for m in main_mods[:10]:
-                        mod_lines.append(f"• `#{m['id']}` **{m['name']}**: " + ", ".join(m['changes']))
-                    seed_mods = [m for m in modified if m['name'].endswith('Seed')]
-                    if seed_mods:
-                        mod_lines.append(f"• *...plus `{len(seed_mods)}` corresponding event seeds updated!*")
-                    embed.add_field(
-                        name="🔄 Rebalanced / Modified Items",
-                        value="\n".join(mod_lines),
-                        inline=False
-                    )
-
-                save_snapshot(new_items)
-                embed.set_footer(text=f"Growtopia Real-Time Auto-Watcher • Total Items: {len(new_items):,}")
-
-                if ALERT_CHANNEL_ID:
-                    ch = bot.get_channel(ALERT_CHANNEL_ID)
-                    if ch:
-                        try:
-                            await ch.send(embed=embed)
-                        except Exception as e:
-                            print(f"Error sending to alert channel: {e}")
-                else:
-                    for guild in bot.guilds:
-                        target = guild.system_channel or (guild.text_channels[0] if guild.text_channels else None)
-                        if target:
-                            try:
-                                await target.send(embed=embed)
-                            except Exception as e:
-                                print(f"Error sending auto alert: {e}")
+        if mtime != LAST_MTIME:
+            LAST_MTIME = mtime
+            print(f"[Auto-Monitor] items.dat modification detected at {mtime}!")
+            await check_and_broadcast_updates()
     except Exception as e:
         print(f"[Auto-Monitor Exception]: {e}")
 
