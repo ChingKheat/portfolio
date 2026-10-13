@@ -5,7 +5,7 @@ import struct
 import zlib
 import json
 import requests
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 
 DISCORD_WEBHOOK_URL = "https://discordapp.com/api/webhooks/1558414040466984963/fqks_HwbDPMBCbsO6Mu4fEDTIC568rv-6XmW9ZmFoKVFDchcwpzu0eXWaOSYfDPGT9-m"
 
@@ -325,6 +325,166 @@ def get_item_icon(texture_file, tex_x, tex_y, item_id, output_dir=SCRIPT_DIR):
         print(f"Error cropping icon for item #{item_id}: {e}")
 
     return None
+
+def generate_showcase_grid(item_list, output_path=None, max_items=25):
+    """
+    Generates a high-resolution dark-themed composite showcase grid of datamined items.
+    Combines up to max_items into a single sleek graphic with item IDs, names, and rarities.
+    """
+    if not item_list:
+        return None
+
+    # Filter out seeds unless only seeds are provided
+    display_items = [it for it in item_list if not it.get("name", "").endswith("Seed") and "null_item" not in it.get("name", "")]
+    if not display_items:
+        display_items = item_list
+    display_items = display_items[:max_items]
+
+    if not display_items:
+        return None
+
+    if output_path is None:
+        output_path = os.path.join(SCRIPT_DIR, "leak_showcase.png")
+
+    cols = 5
+    rows = (len(display_items) + cols - 1) // cols
+    cell_w, cell_h = 140, 160
+    header_h = 44
+    padding = 12
+
+    total_w = padding * 2 + cols * cell_w
+    total_h = header_h + rows * cell_h + padding * 2
+
+    canvas = Image.new("RGBA", (total_w, total_h), (24, 25, 28, 255))
+    draw = ImageDraw.Draw(canvas)
+    font = ImageFont.load_default()
+
+    # Header banner
+    draw.rectangle([0, 0, total_w, header_h], fill=(35, 39, 42, 255))
+    draw.line([0, header_h, total_w, header_h], fill=(88, 101, 242, 255), width=2)
+    header_text = f"GROWTOPIA DATAMINED ASSETS • {len(display_items)} ITEMS SHOWCASE"
+    draw.text((padding + 6, 16), header_text, fill=(235, 237, 239, 255), font=font)
+
+    for i, it in enumerate(display_items):
+        col = i % cols
+        row = i // cols
+        x = padding + col * cell_w
+        y = header_h + padding + row * cell_h
+
+        # Card container
+        card_rect = [x + 4, y + 4, x + cell_w - 4, y + cell_h - 4]
+        draw.rounded_rectangle(card_rect, radius=8, fill=(43, 45, 49, 255), outline=(58, 62, 69, 255), width=1)
+
+        # Draw icon
+        icon_path = get_item_icon(it.get("texture"), it.get("tex_x", 0), it.get("tex_y", 0), it["id"])
+        if icon_path and os.path.exists(icon_path):
+            try:
+                icon_img = Image.open(icon_path).convert("RGBA")
+                icon_resized = icon_img.resize((84, 84), Image.Resampling.NEAREST)
+                canvas.paste(icon_resized, (x + (cell_w - 84) // 2, y + 10), icon_resized)
+            except Exception:
+                pass
+
+        # Draw Item ID badge
+        id_str = f"#{it['id']}"
+        badge_w = len(id_str) * 7 + 8
+        draw.rounded_rectangle([x + 10, y + 102, x + 10 + badge_w, y + 118], radius=4, fill=(30, 31, 34, 255))
+        draw.text((x + 14, y + 104), id_str, fill=(88, 101, 242, 255), font=font)
+
+        # Draw Item Name (truncated)
+        name = it.get("name", "Unknown")
+        if len(name) > 17:
+            name = name[:15] + ".."
+        draw.text((x + 10, y + 124), name, fill=(255, 255, 255, 255), font=font)
+
+        # Draw Rarity or slot
+        rarity = it.get("rarity", 0)
+        rarity_str = f"Rarity: {rarity}" if rarity else "Untradeable"
+        draw.text((x + 10, y + 138), rarity_str, fill=(150, 155, 165, 255), font=font)
+
+    try:
+        canvas.save(output_path, "PNG")
+        return output_path
+    except Exception as e:
+        print(f"Error saving showcase grid: {e}")
+        return None
+
+def generate_item_card(item, output_path=None):
+    """
+    Renders a sleek dark-themed infographic card for an individual item.
+    Includes item icon, ID, name, rarity, slot, break hits/grow time, and description quote.
+    """
+    if not item:
+        return None
+
+    cards_dir = os.path.join(SCRIPT_DIR, "cards")
+    os.makedirs(cards_dir, exist_ok=True)
+    if output_path is None:
+        output_path = os.path.join(cards_dir, f"card_{item['id']}.png")
+
+    w, h = 480, 200
+    canvas = Image.new("RGBA", (w, h), (24, 25, 28, 255))
+    draw = ImageDraw.Draw(canvas)
+    font = ImageFont.load_default()
+
+    # Outer border & background
+    draw.rounded_rectangle([2, 2, w - 2, h - 2], radius=12, fill=(35, 37, 41, 255), outline=(58, 62, 69, 255), width=2)
+
+    # Left icon container
+    rarity = item.get("rarity", 0)
+    border_color = (241, 196, 15, 255) if rarity >= 900 else (88, 101, 242, 255)
+    draw.rounded_rectangle([18, 18, 162, 162], radius=10, fill=(43, 45, 49, 255), outline=border_color, width=2)
+
+    # Get & paste icon
+    icon_path = get_item_icon(item.get("texture"), item.get("tex_x", 0), item.get("tex_y", 0), item["id"])
+    if icon_path and os.path.exists(icon_path):
+        try:
+            icon_img = Image.open(icon_path).convert("RGBA")
+            icon_resized = icon_img.resize((120, 120), Image.Resampling.NEAREST)
+            canvas.paste(icon_resized, (30, 30), icon_resized)
+        except Exception:
+            pass
+
+    # Right details area
+    id_str = f"#{item['id']}"
+    badge_w = len(id_str) * 8 + 10
+    draw.rounded_rectangle([180, 20, 180 + badge_w, 38], radius=4, fill=(88, 101, 242, 255))
+    draw.text((185, 23), id_str, fill=(255, 255, 255, 255), font=font)
+
+    # Item Name
+    name = item.get("name", "Unknown Item")
+    draw.text((180, 46), name[:28], fill=(255, 255, 255, 255), font=font)
+
+    # Slot & Rarity
+    slot = BODY_PART_MAP.get(item.get("body_part", 0), "None / Block")
+    draw.text((180, 72), f"Slot: {slot}", fill=(185, 190, 200, 255), font=font)
+    rarity_text = f"Rarity: {rarity}" if rarity else "Untradeable"
+    draw.text((180, 90), rarity_text, fill=(241, 196, 15, 255) if rarity >= 900 else (185, 190, 200, 255), font=font)
+
+    if item.get("break_hits", 0) > 0:
+        draw.text((180, 108), f"Hardness: {item['break_hits']} hits", fill=(150, 155, 165, 255), font=font)
+    elif item.get("grow_time", 0) > 0:
+        draw.text((180, 108), f"Grow Time: {item['grow_time']}s", fill=(150, 155, 165, 255), font=font)
+    else:
+        tex = item.get("texture", "")
+        draw.text((180, 108), f"Texture: {tex[:24]}", fill=(150, 155, 165, 255), font=font)
+
+    # Description (quote)
+    if item.get("info"):
+        desc = item["info"].strip()
+        if len(desc) > 38:
+            desc = desc[:36] + "..."
+        draw.text((180, 132), f'"{desc}"', fill=(130, 135, 145, 255), font=font)
+
+    # Watermark / Footer
+    draw.text((180, 166), "GROWTOPIA DATAMINER • ASSET LEAKS", fill=(100, 105, 115, 255), font=font)
+
+    try:
+        canvas.save(output_path, "PNG")
+        return output_path
+    except Exception as e:
+        print(f"Error saving item card: {e}")
+        return None
 
 def send_discord_webhook(title, description, fields=None, image_path=None, color=0x2ecc71):
     payload = {

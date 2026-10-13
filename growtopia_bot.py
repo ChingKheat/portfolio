@@ -44,6 +44,8 @@ from growtopia_miner import (
     parse_itemsdat,
     convert_rttex,
     get_item_icon,
+    generate_showcase_grid,
+    generate_item_card,
     BODY_PART_MAP,
     generate_items_diff,
     save_snapshot,
@@ -60,6 +62,7 @@ BOT_TOKEN = config.get("token")
 PREFIX = config.get("prefix", "!")
 WATCHER_ENABLED = True
 ALERT_CHANNEL_ID = config.get("alert_channel_id")
+ALERT_ROLE_ID = config.get("alert_role_id")
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -209,6 +212,97 @@ def add_chunked_field(embed, field_name, lines, max_per_field=1000):
             inline=False
         )
 
+class LeakCategorySelect(discord.ui.Select):
+    def __init__(self, items, original_embed, categories):
+        self.items = items
+        self.original_embed = original_embed
+        self.categories = categories
+
+        options = [
+            discord.SelectOption(
+                label="📊 All Slots Overview",
+                value="overview",
+                description="View complete categorized summary of items",
+                emoji="📊",
+                default=True
+            )
+        ]
+
+        emoji_map = {
+            "⚔️ Weapons & Hand Items": "⚔️",
+            "🪽 Wings, Capes & Back": "🪽",
+            "🐎 Mounts & Shoes": "🐎",
+            "👑 Hats, Hair & Faces": "👑",
+            "👕 Shirts, Pants & Suits": "👕",
+            "🔮 Auras, Pets & Artifacts": "🔮",
+            "🧱 Placeables & Weather": "🧱",
+            "🌱 Paired Seeds": "🌱",
+            "📦 Other Items": "📦"
+        }
+
+        for cat_name, cat_items in self.categories.items():
+            if not cat_items or cat_name == "🌱 Paired Seeds":
+                continue
+            emoji = emoji_map.get(cat_name, "📦")
+            clean_label = cat_name
+            for em in emoji_map.values():
+                clean_label = clean_label.replace(em, "").strip()
+            options.append(
+                discord.SelectOption(
+                    label=f"{clean_label[:20]} ({len(cat_items)})",
+                    value=cat_name,
+                    description=f"Inspect all {len(cat_items)} {clean_label.lower()} in detail",
+                    emoji=emoji
+                )
+            )
+
+        super().__init__(
+            placeholder="🔍 Select an equipment slot to inspect in detail...",
+            min_values=1,
+            max_values=1,
+            options=options[:25]
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        selected = self.values[0]
+
+        for opt in self.options:
+            opt.default = (opt.value == selected)
+
+        if selected == "overview":
+            await interaction.response.edit_message(embed=self.original_embed, view=self.view)
+            return
+
+        cat_items = self.categories.get(selected, [])
+        cat_embed = discord.Embed(
+            title=f"📦 {selected} Directory",
+            description=f"Showing all **{len(cat_items)} items** in this category:\n",
+            color=0x5865F2
+        )
+
+        for it in cat_items:
+            rarity = f"Rarity `{it.get('rarity', 0)}`" if it.get("rarity") else "Untradeable"
+            slot = BODY_PART_MAP.get(it.get("body_part", 0), "None / Block")
+            desc = f"• **Slot:** `{slot}` | **{rarity}**\n• **Texture:** `{it.get('texture')}` (Grid: X={it.get('tex_x', 0)}, Y={it.get('tex_y', 0)})\n"
+            if it.get("info"):
+                desc += f"• *\"{it['info'].strip()}\"*\n"
+            cat_embed.add_field(
+                name=f"#{it['id']} — {it['name']}",
+                value=desc,
+                inline=False
+            )
+
+        cat_embed.set_footer(text=f"Total: {len(cat_items)} items • Select above to switch categories")
+        await interaction.response.edit_message(embed=cat_embed, view=self.view)
+
+class LeakDetailsView(discord.ui.View):
+    def __init__(self, items, original_embed, timeout=600):
+        super().__init__(timeout=timeout)
+        self.items = items
+        self.original_embed = original_embed
+        cats = categorize_items(items)
+        self.add_item(LeakCategorySelect(items, original_embed, cats))
+
 def build_leak_embed(diff, total_count, version, mtime_str, title="🚨 GROWTOPIA DATABASE UPDATE DETECTED!"):
     """Builds a psychological, high-contrast, full-width Details Page embed for updates."""
     added = diff.get("added", [])
@@ -295,6 +389,17 @@ async def check_and_broadcast_updates(ctx_to_reply=None):
         print(f"🚨 [BROADCAST] Detected {len(added)} added and {len(modified)} modified items!")
         embed = build_leak_embed(diff, len(ITEMS_CACHE), ITEMS_VERSION, mtime_str)
 
+        # Generate sleek showcase grid graphic
+        items_for_showcase = added if added else [it for it in ITEMS_CACHE if any(m['id'] == it['id'] for m in modified)]
+        showcase_path = generate_showcase_grid(items_for_showcase)
+        file_to_send = None
+        if showcase_path and os.path.exists(showcase_path):
+            embed.set_image(url="attachment://leak_showcase.png")
+            file_to_send = discord.File(showcase_path, filename="leak_showcase.png")
+
+        view = LatestView(items_for_showcase, mtime_str, initial_mode="event") if items_for_showcase else None
+        ping_content = f"<@&{ALERT_ROLE_ID}> 🚨 **NEW GROWTOPIA LEAKS / UPDATE DETECTED!**" if ALERT_ROLE_ID else None
+
         # Broadcast to alert channel (#data)
         if ALERT_CHANNEL_ID:
             ch = bot.get_channel(ALERT_CHANNEL_ID)
@@ -305,14 +410,15 @@ async def check_and_broadcast_updates(ctx_to_reply=None):
                     print(f"Error fetching alert channel: {e}")
             if ch:
                 try:
-                    await ch.send(embed=embed)
+                    await ch.send(content=ping_content, embed=embed, file=file_to_send, view=view)
                 except Exception as e:
                     print(f"Error sending update embed: {e}")
 
         # Also reply to command sender if called via !sync or !check
         if ctx_to_reply and ctx_to_reply.channel.id != ALERT_CHANNEL_ID:
             try:
-                await ctx_to_reply.send(embed=embed)
+                file_reply = discord.File(showcase_path, filename="leak_showcase.png") if showcase_path and os.path.exists(showcase_path) else None
+                await ctx_to_reply.send(embed=embed, file=file_reply, view=view)
             except Exception:
                 pass
 
@@ -386,11 +492,30 @@ async def cmd_help(ctx):
         description="Type any of these commands in this channel:",
         color=0x3498db
     )
-    embed.add_field(name=f"`{PREFIX}latest`", value="Show the newest in-game additions & leaked items from the latest patch.", inline=False)
+    embed.add_field(
+        name=f"`{PREFIX}latest` *(Interactive Hub)*",
+        value=(
+            "Show the newest in-game additions with **interactive buttons**:\n"
+            f"• `{PREFIX}latest` (or `{PREFIX}latest event`) ➔ Grouped by **Event & Theme**\n"
+            f"• `{PREFIX}latest id` ➔ Strict numerical **Item ID order** (#16364 ➔ #16432)\n"
+            f"• `{PREFIX}latest date` ➔ Grouped by **Release Date & Patch Waves**\n"
+            f"• `{PREFIX}latest slot` ➔ Grouped by **Equipment Slot** (Weapons, Wings, etc.)\n"
+            f"• `{PREFIX}latest 50` ➔ Customize how many items to inspect"
+        ),
+        inline=False
+    )
+    embed.add_field(
+        name=f"`{PREFIX}wonderweek` / `{PREFIX}fall` / `{PREFIX}immortal`",
+        value="Quick shortcuts to display only items from that specific event set.",
+        inline=False
+    )
+    embed.add_field(name=f"`{PREFIX}card <name or ID>`", value="Generate a sleek dark-themed infographic card image for any item.", inline=False)
     embed.add_field(name=f"`{PREFIX}diff`", value="Show the patch changelog & diff against baseline snapshot (or `!diff 25`).", inline=False)
+    embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16400`) for stats & 128x128 sprite.", inline=False)
+    embed.add_field(name=f"`{PREFIX}textures`", value="List recent sprite sheets (type `!texture <name>` to view full sheet).", inline=False)
+    embed.add_field(name=f"`{PREFIX}role <@role>`", value="Set a role to ping on new leak alerts (or `!role none` to disable).", inline=False)
     embed.add_field(name=f"`{PREFIX}check`", value="Scan local and Ubisoft game files for new updates right now.", inline=False)
     embed.add_field(name=f"`{PREFIX}sync`", value="Silently check Ubisoft servers for new patches & hotfixes.", inline=False)
-    embed.add_field(name=f"`{PREFIX}item <name or ID>`", value="Search any item (e.g. `!item Pickaxe` or `!item 16400`) for stats & 128x128 sprite.", inline=False)
     embed.add_field(name=f"`{PREFIX}start`", value="Lock automatic update alerts to this channel and start 24/7 monitoring.", inline=False)
     embed.add_field(name=f"`{PREFIX}status`", value="Check if the real-time background watcher is active.", inline=False)
     embed.add_field(name=f"`{PREFIX}stop`", value="Pause automatic leak alerts.", inline=False)
@@ -451,12 +576,247 @@ async def cmd_status(ctx):
     )
     await ctx.send(embed=embed)
 
-@bot.command(name="latest")
-async def cmd_latest(ctx):
+EVENT_DEFINITIONS = [
+    ("🌟 Wonder Week 2026", ["atom", "lightning nunchuck", "mecha tank", "pariah", "super stinger", "paradise", "winged hair", "drape coat", "wonder week", "wonderweek", "ww"]),
+    ("👑 Immortal Club & VIP", ["immortal", "vip club", "royal pass", "subscriber"]),
+    ("⚔️ Guild Clash & Domination", ["shadow-you", "domination", "sharp wrench", "guild clash", "clash"]),
+    ("🍂 Fall Festival / Harvest", ["fall", "autumn", "harvest", "corn", "gazebo", "lake lantern", "sheep chariot", "arched bridge", "witch"]),
+    ("🎟️ Voucher Dayz & Store", ["growmoji", "voucher", "wardrobe preset", "tanuki", "orca hood", "anime bun", "wolf cut"]),
+    ("🎃 Halloween / Night of the Comet", ["halloween", "ghoul", "ghost", "franken", "spooky", "dracula", "vampire", "pumpkin"]),
+    ("❄️ Winterfest", ["winter", "fest", "snow", "ice", "santa", "reindeer", "frost"]),
+    ("💘 Valentine's Day", ["valentine", "heart", "cupid", "golden heart"]),
+    ("🍀 St. Patrick's Week", ["clover", "leprechaun", "pot o' gold", "celtic"]),
+    ("🐰 Easter Week", ["easter", "bunny", "egg", "chick"]),
+    ("☀️ SummerFest", ["summer", "phoenix", "firework", "beach"]),
+    ("🎪 Carnival", ["carnival", "ringmaster", "circus"]),
+    ("🌮 Cinco de Mayo", ["cinco", "pinata", "sombrero", "mariachi", "fiesta"]),
+    ("🌋 Apocalypse Event", ["apocalypse", "anarchy", "radioactive"]),
+]
+
+def classify_event(it):
+    name = it.get('name', '').lower()
+    desc = it.get('info', '').lower()
+    text = f"{name} {desc}"
+    for ev_name, kws in EVENT_DEFINITIONS:
+        if any(kw in text for kw in kws):
+            return ev_name
+    return "📦 Other Additions"
+
+def build_latest_event_embed(items, mtime_str):
+    start_id = items[0]['id'] if items else 0
+    end_id = items[-1]['id'] if items else 0
+
+    events = {}
+    for it in items:
+        ev = classify_event(it)
+        events.setdefault(ev, []).append(it)
+
+    summary_lines = [f"• {ev}: {len(ev_items)} items" for ev, ev_items in events.items()]
+    summary_str = "\n".join(summary_lines)
+
+    embed = discord.Embed(
+        title="✨ Growtopia Latest In-Game Items Directory",
+        description=(
+            f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total Items:** `{len(ITEMS_CACHE):,}`\n"
+            f"> 📅 **Last Synced:** `{mtime_str}`\n"
+            f"> 🔍 **Datamined Range:** IDs `#{start_id}` through `#{end_id}` ({len(items)} items)\n\n"
+            "```yaml\n"
+            f"🎪 Filter Mode: Grouped by Event & Theme ({len(events)} Events Detected)\n"
+            f"{summary_str}\n"
+            "```\n"
+            "💡 *Click buttons below to switch view by **Item ID**, **Date / Patch**, or **Slot**!*"
+        ),
+        color=0xF1C40F
+    )
+
+    for ev_name, ev_items in events.items():
+        range_str = f"IDs `#{ev_items[0]['id']} – #{ev_items[-1]['id']}`"
+        lines = [format_item_line(it) for it in ev_items]
+        add_chunked_field(embed, f"{ev_name} ({len(ev_items)} items • {range_str})", lines)
+
+    embed.set_footer(text=f"Total: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
+
+    cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
+    if os.path.exists(cosmetics_png):
+        embed.set_thumbnail(url="attachment://player_cosmetics4.png")
+
+    return embed
+
+def build_latest_id_embed(items, mtime_str):
+    start_id = items[0]['id'] if items else 0
+    end_id = items[-1]['id'] if items else 0
+
+    embed = discord.Embed(
+        title="✨ Growtopia Latest In-Game Items Directory",
+        description=(
+            f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total Items:** `{len(ITEMS_CACHE):,}`\n"
+            f"> 📅 **Last Synced:** `{mtime_str}`\n"
+            f"> 🔍 **Strict ID Range:** IDs `#{start_id}` through `#{end_id}` ({len(items)} items)\n\n"
+            "```yaml\n"
+            "🔢 Filter Mode: Sequential Numerical Item ID Order\n"
+            "```\n"
+            "💡 *Chronological in-game datamine registry ordered directly by internal Item ID:*"
+        ),
+        color=0x3498DB
+    )
+
+    # Chunk into clean, readable batches of 10 items
+    chunk_size = 10
+    id_chunks = [items[i:i + chunk_size] for i in range(0, len(items), chunk_size)]
+    for chunk in id_chunks:
+        header = f"📋 IDs `#{chunk[0]['id']}` through `#{chunk[-1]['id']}` ({len(chunk)} items)"
+        lines = [format_item_line(it) for it in chunk]
+        add_chunked_field(embed, header, lines)
+
+    embed.set_footer(text=f"Total: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
+
+    cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
+    if os.path.exists(cosmetics_png):
+        embed.set_thumbnail(url="attachment://player_cosmetics4.png")
+
+    return embed
+
+def build_latest_date_embed(items, mtime_str):
+    start_id = items[0]['id'] if items else 0
+    end_id = items[-1]['id'] if items else 0
+    max_id = items[-1]['id'] if items else 0
+
+    embed = discord.Embed(
+        title="✨ Growtopia Latest In-Game Items Directory",
+        description=(
+            f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total Items:** `{len(ITEMS_CACHE):,}`\n"
+            f"> 📅 **Last Game File Sync:** `{mtime_str}`\n"
+            f"> 🔍 **Datamined Range:** IDs `#{start_id}` through `#{end_id}` ({len(items)} items)\n\n"
+            "```yaml\n"
+            "📅 Filter Mode: Grouped by Release Date & Patch Waves\n"
+            "```\n"
+            "💡 *Timeline breakdown of when items arrived in the game database:*"
+        ),
+        color=0x9B59B6
+    )
+
+    wave_defs = [
+        {
+            "title": "🚀 Wave 1: Latest Hotfix & Live Leaks (v5.59 Patch)",
+            "date_info": f"Live File Synced: {mtime_str}",
+            "note": "Wonder Week & Immortal Club sets",
+            "items": [it for it in items if it['id'] >= max_id - 38],
+        },
+        {
+            "title": "📦 Wave 2: October Update Wave (v5.59 Base)",
+            "date_info": "Early October 2026 • Main Patch",
+            "note": "Fall Festival & Guild Clash sets",
+            "items": [it for it in items if max_id - 75 <= it['id'] < max_id - 38],
+        },
+        {
+            "title": "⏳ Wave 3: Earlier Patch Additions (v5.58)",
+            "date_info": "September 2026 • Prior Expansion",
+            "note": "Growmojis & Voucher Dayz",
+            "items": [it for it in items if it['id'] < max_id - 75],
+        }
+    ]
+
+    for w in wave_defs:
+        if w["items"]:
+            w_range = f"IDs `#{w['items'][0]['id']} – #{w['items'][-1]['id']}`"
+            header = f"{w['title']}\n📅 `{w['date_info']}` • {w_range} ({len(w['items'])} items)"
+            lines = [format_item_line(it) for it in w["items"]]
+            add_chunked_field(embed, header, lines)
+
+    embed.set_footer(text=f"Total: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
+
+    cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
+    if os.path.exists(cosmetics_png):
+        embed.set_thumbnail(url="attachment://player_cosmetics4.png")
+
+    return embed
+
+def build_latest_slot_embed(items, mtime_str):
+    start_id = items[0]['id'] if items else 0
+    end_id = items[-1]['id'] if items else 0
+
+    embed = discord.Embed(
+        title="✨ Growtopia Latest In-Game Items Directory",
+        description=(
+            f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total Items:** `{len(ITEMS_CACHE):,}`\n"
+            f"> 📅 **Last Synced:** `{mtime_str}`\n"
+            f"> 🔍 **Latest Datamined Range:** IDs `#{start_id}` through `#{end_id}`\n\n"
+            "```yaml\n"
+            "👔 Filter Mode: Categorized by Gameplay Equipment Slot\n"
+            "```\n"
+            "💡 *Weapons, wings, mounts, hats, costumes, and placeables:*"
+        ),
+        color=0x5865F2
+    )
+
+    cats = categorize_items(items)
+    for cat_name, cat_items in cats.items():
+        if cat_name != "🌱 Paired Seeds":
+            lines = [format_item_line(it) for it in cat_items]
+            add_chunked_field(embed, f"{cat_name} ({len(cat_items)})", lines)
+
+    embed.set_footer(text=f"Total: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
+
+    cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
+    if os.path.exists(cosmetics_png):
+        embed.set_thumbnail(url="attachment://player_cosmetics4.png")
+
+    return embed
+
+class LatestView(discord.ui.View):
+    def __init__(self, items, mtime_str, initial_mode="event", timeout=300):
+        super().__init__(timeout=timeout)
+        self.items = items
+        self.mtime_str = mtime_str
+        self.mode = initial_mode
+        self._sync_buttons()
+
+    def _sync_buttons(self):
+        for child in self.children:
+            if isinstance(child, discord.ui.Button):
+                if child.custom_id == f"btn_{self.mode}":
+                    child.style = discord.ButtonStyle.primary
+                else:
+                    child.style = discord.ButtonStyle.secondary
+
+    @discord.ui.button(label="By Event", emoji="🎪", style=discord.ButtonStyle.primary, custom_id="btn_event")
+    async def on_event(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.mode = "event"
+        self._sync_buttons()
+        embed = build_latest_event_embed(self.items, self.mtime_str)
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="By Item ID", emoji="🔢", style=discord.ButtonStyle.secondary, custom_id="btn_id")
+    async def on_id(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.mode = "id"
+        self._sync_buttons()
+        embed = build_latest_id_embed(self.items, self.mtime_str)
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="By Date / Patch", emoji="📅", style=discord.ButtonStyle.secondary, custom_id="btn_date")
+    async def on_date(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.mode = "date"
+        self._sync_buttons()
+        embed = build_latest_date_embed(self.items, self.mtime_str)
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    @discord.ui.button(label="By Slot", emoji="👔", style=discord.ButtonStyle.secondary, custom_id="btn_slot")
+    async def on_slot(self, interaction: discord.Interaction, button: discord.ui.Button):
+        self.mode = "slot"
+        self._sync_buttons()
+        embed = build_latest_slot_embed(self.items, self.mtime_str)
+        await interaction.response.edit_message(embed=embed, view=self)
+
+    async def on_timeout(self):
+        for child in self.children:
+            child.disabled = True
+
+@bot.command(name="latest", aliases=["recent", "newest", "leaks"])
+async def cmd_latest(ctx, *, filter_mode: str = None):
     """
-    Dynamically displays the latest in-game additions from items.dat,
-    categorized by gameplay slot (Weapons, Mounts, Wings, Hats, Costumes, etc.).
-    Completely dynamic for all future updates.
+    Dynamically displays the latest in-game additions from items.dat.
+    Can be viewed by Event, Item ID, Date / Patch, or Equipment Slot.
+    Interactive buttons allow instant switching in Discord.
     """
     if not ITEMS_CACHE:
         refresh_items()
@@ -467,58 +827,73 @@ async def cmd_latest(ctx):
         mtime = os.path.getmtime(ITEMS_DAT_PATH)
         mtime_str = datetime.datetime.fromtimestamp(mtime).strftime("%b %d, %Y at %I:%M %p")
 
-    # Dynamically select the newest non-seed items from the database
+    # Select the newest non-seed items
     non_seeds = [it for it in ITEMS_CACHE if not it['name'].endswith('Seed') and 'null_item' not in it['name']]
-    newest_items = non_seeds[-35:] if len(non_seeds) >= 35 else non_seeds
-    start_id = newest_items[0]['id'] if newest_items else 0
-    end_id = newest_items[-1]['id'] if newest_items else 0
 
-    embed = discord.Embed(
-        title="✨ Growtopia Latest In-Game Items Directory",
-        description=(
-            f"> 📦 **Database Version:** `items.dat v{ITEMS_VERSION}` • **Total Items:** `{len(ITEMS_CACHE):,}`\n"
-            f"> 📅 **Last Synced:** `{mtime_str}`\n"
-            f"> 🔍 **Latest Datamined Range:** IDs `#{start_id}` through `#{end_id}`\n\n"
-            "```yaml\n"
-            "📊 Latest In-Game Additions (Categorized by Gameplay Slot)\n"
-            "```"
-        ),
-        color=0x5865F2
-    )
+    count = 35
+    target_mode = "event"
+    specific_event_filter = None
 
-    cats = categorize_items(newest_items)
-    for cat_name, cat_items in cats.items():
-        if cat_name != "🌱 Paired Seeds":
-            lines = [format_item_line(it) for it in cat_items]
-            add_chunked_field(embed, f"{cat_name} ({len(cat_items)})", lines)
+    if filter_mode:
+        q = filter_mode.strip().lower()
+        if q.isdigit():
+            count = max(5, min(100, int(q)))
+        elif q in ("id", "ids", "num", "number", "numerical"):
+            target_mode = "id"
+        elif q in ("date", "dates", "patch", "time", "wave", "era"):
+            target_mode = "date"
+        elif q in ("slot", "slots", "wearable", "body", "part"):
+            target_mode = "slot"
+        elif q in ("event", "events", "theme"):
+            target_mode = "event"
+        else:
+            # User passed an event keyword like "ww", "fall", "immortal"
+            target_mode = "event"
+            specific_event_filter = q
 
-    embed.set_footer(text=f"Total: {len(ITEMS_CACHE):,} items | items.dat v{ITEMS_VERSION} | Type !item <name or ID>")
+    newest_items = non_seeds[-count:] if len(non_seeds) >= count else non_seeds
 
-    cosmetics_png = os.path.join(SCRIPT_DIR, "player_cosmetics4.png")
-    if os.path.exists(cosmetics_png):
-        file = discord.File(cosmetics_png, filename="player_cosmetics4.png")
-        embed.set_thumbnail(url="attachment://player_cosmetics4.png")
-        await ctx.send(embed=embed, file=file)
+    if specific_event_filter:
+        filtered = [it for it in newest_items if specific_event_filter in it['name'].lower() or specific_event_filter in it.get('info', '').lower()]
+        if not filtered:
+            # Search last 100 items if not found in top 35
+            filtered = [it for it in non_seeds[-100:] if specific_event_filter in it['name'].lower() or specific_event_filter in it.get('info', '').lower()]
+        if filtered:
+            newest_items = filtered
+
+    if target_mode == "id":
+        embed = build_latest_id_embed(newest_items, mtime_str)
+    elif target_mode == "date":
+        embed = build_latest_date_embed(newest_items, mtime_str)
+    elif target_mode == "slot":
+        embed = build_latest_slot_embed(newest_items, mtime_str)
     else:
-        await ctx.send(embed=embed)
+        embed = build_latest_event_embed(newest_items, mtime_str)
+
+    view = LatestView(newest_items, mtime_str, initial_mode=target_mode)
+
+    showcase_path = generate_showcase_grid(newest_items)
+    if showcase_path and os.path.exists(showcase_path):
+        embed.set_image(url="attachment://leak_showcase.png")
+        file = discord.File(showcase_path, filename="leak_showcase.png")
+        await ctx.send(embed=embed, view=view, file=file)
+    else:
+        await ctx.send(embed=embed, view=view)
 
 @bot.command(name="wonderweek", aliases=["ww"])
 async def cmd_wonderweek(ctx):
     """Filter helper for Wonder Week items."""
-    if not ITEMS_CACHE:
-        refresh_items()
-    ww_items = [it for it in ITEMS_CACHE if 16396 <= it['id'] <= 16425 and not it['name'].endswith('Seed')]
-    embed = discord.Embed(
-        title="🌟 Wonder Week Event Items Directory",
-        description=f"Showing all **{len(ww_items)} event items** from IDs `#16396` – `#16425`:\n",
-        color=0xF1C40F
-    )
-    cats = categorize_items(ww_items)
-    for cat_name, cat_items in cats.items():
-        lines = [format_item_line(it) for it in cat_items]
-        add_chunked_field(embed, f"{cat_name} ({len(cat_items)})", lines)
-    embed.set_footer(text=f"Type !item <name or ID> for 128x128 sprite preview • Total Database: {len(ITEMS_CACHE):,}")
-    await ctx.send(embed=embed)
+    await cmd_latest(ctx, filter_mode="wonder week")
+
+@bot.command(name="fall", aliases=["harvest", "autumn"])
+async def cmd_fall(ctx):
+    """Filter helper for Fall Festival / Harvest items."""
+    await cmd_latest(ctx, filter_mode="fall")
+
+@bot.command(name="immortal", aliases=["vip"])
+async def cmd_immortal(ctx):
+    """Filter helper for Immortal Club & VIP items."""
+    await cmd_latest(ctx, filter_mode="immortal")
 
 @bot.command(name="item", aliases=["search", "find"])
 async def cmd_item(ctx, *, query: str = None):
@@ -752,6 +1127,126 @@ async def cmd_texture(ctx, *, tex_name: str = None):
         await ctx.send(embed=embed, file=file)
     except Exception as e:
         await ctx.send(f"❌ Error converting texture: {e}")
+
+@bot.command(name="card", aliases=["showcase", "preview"])
+async def cmd_card(ctx, *, query: str = None):
+    """
+    Generates a sleek dark-themed infographic card image for any item.
+    Usage: !card Pickaxe or !card 16396
+    """
+    if not query:
+        await ctx.send(f"❌ Please provide an item name or ID. Example: `{PREFIX}card Pickaxe`")
+        return
+
+    if not ITEMS_CACHE:
+        refresh_items()
+
+    q = query.strip().lower()
+    target = None
+    if q.isdigit():
+        tid = int(q)
+        target = next((it for it in ITEMS_CACHE if it["id"] == tid), None)
+    else:
+        target = next((it for it in ITEMS_CACHE if q in it["name"].lower()), None)
+
+    if not target:
+        await ctx.send(f"❌ Item `{query}` not found in database.")
+        return
+
+    card_path = generate_item_card(target)
+    if card_path and os.path.exists(card_path):
+        file = discord.File(card_path, filename=f"card_{target['id']}.png")
+        embed = discord.Embed(
+            title=f"✨ Item Showcase: #{target['id']} {target['name']}",
+            color=0x5865F2
+        )
+        embed.set_image(url=f"attachment://card_{target['id']}.png")
+        embed.set_footer(text=f"items.dat v{ITEMS_VERSION} • Type {PREFIX}item {target['id']} for text details")
+        await ctx.send(embed=embed, file=file)
+    else:
+        await ctx.send(f"❌ Failed to render card for #{target['id']}.")
+
+@bot.command(name="role", aliases=["setrole", "leakrole"])
+async def cmd_role(ctx, *, role_input: str = None):
+    """
+    Configures the role to ping when new leaks or updates drop.
+    Usage:
+    !role @Leaks (or !role 123456789)
+    !role none (to disable role pings)
+    !role (to check current setting)
+    """
+    global ALERT_ROLE_ID
+    if not role_input:
+        if ALERT_ROLE_ID:
+            await ctx.send(f"🔔 **Current Leak Alert Role:** <@&{ALERT_ROLE_ID}> (`{ALERT_ROLE_ID}`)\nType `{PREFIX}role none` to disable.")
+        else:
+            await ctx.send(f"ℹ️ **No leak alert role is currently set.** Type `{PREFIX}role @RoleName` to set one!")
+        return
+
+    inp = role_input.strip().lower()
+    if inp in ["none", "off", "disable", "clear", "remove"]:
+        ALERT_ROLE_ID = None
+        config["alert_role_id"] = None
+        try:
+            with open(CONFIG_FILE, "w") as f:
+                json.dump(config, f, indent=2)
+        except Exception:
+            pass
+        await ctx.send("✅ **Role alerts disabled.** The bot will not ping any role on new updates.")
+        return
+
+    target_id = None
+    if ctx.message.role_mentions:
+        target_id = ctx.message.role_mentions[0].id
+    elif inp.isdigit():
+        target_id = int(inp)
+    else:
+        if ctx.guild:
+            for r in ctx.guild.roles:
+                if inp in r.name.lower():
+                    target_id = r.id
+                    break
+
+    if not target_id:
+        await ctx.send(f"❌ Could not find role `{role_input}`. Please mention the role (e.g. `{PREFIX}role @Leaks`) or provide its ID.")
+        return
+
+    ALERT_ROLE_ID = target_id
+    config["alert_role_id"] = ALERT_ROLE_ID
+    try:
+        with open(CONFIG_FILE, "w") as f:
+            json.dump(config, f, indent=2)
+    except Exception:
+        pass
+    await ctx.send(f"✅ **Leak Alert Role Set!** <@&{ALERT_ROLE_ID}> will now be pinged whenever new items or updates are datamined!")
+
+@bot.command(name="textures", aliases=["sprites"])
+async def cmd_textures(ctx):
+    """
+    Lists the texture sheets used by the latest items and explains how to inspect them.
+    """
+    if not ITEMS_CACHE:
+        refresh_items()
+
+    non_seeds = [it for it in ITEMS_CACHE if not it['name'].endswith('Seed') and 'null_item' not in it['name']]
+    newest = non_seeds[-35:] if len(non_seeds) >= 35 else non_seeds
+    tex_set = {}
+    for it in newest:
+        tex = it.get("texture", "")
+        if tex:
+            tex_set[tex] = tex_set.get(tex, 0) + 1
+
+    lines = [f"• `{tex}` — used by `{count}` recent items" for tex, count in sorted(tex_set.items(), key=lambda x: x[1], reverse=True)[:10]]
+    embed = discord.Embed(
+        title="🖼️ Recent Item Sprite Sheets",
+        description=(
+            "The newest datamined items use the following texture sheets in the game directory:\n\n" +
+            "\n".join(lines) +
+            f"\n\n💡 *Tip: Type `{PREFIX}texture <sheet_name>` (e.g. `{PREFIX}texture player_cosmetics4`) to view the complete full-resolution sprite sheet!*"
+        ),
+        color=0x9b59b6
+    )
+    await ctx.send(embed=embed)
 
 # 24/7 background watcher loop
 @tasks.loop(seconds=5)
