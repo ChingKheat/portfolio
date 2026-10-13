@@ -425,12 +425,12 @@ async def check_and_broadcast_updates(ctx_to_reply=None):
 
     return None
 
-@tasks.loop(minutes=30)
+@tasks.loop(minutes=5)
 async def auto_hotfix_sync_loop():
-    """Periodically checks for silent server maintenance hotfixes in the background every 30 minutes."""
+    """Periodically checks for silent server maintenance hotfixes in the background every 5 minutes."""
     if not WATCHER_ENABLED:
         return
-    print("[Auto-Hotfix] Starting scheduled 2-hour background game sync...")
+    print("[Auto-Hotfix] Starting scheduled 5-minute background game sync...")
     success, msg = await perform_silent_sync(max_seconds=5)
     print(f"[Auto-Hotfix] Result: {msg}")
     if success:
@@ -568,7 +568,7 @@ async def cmd_status(ctx):
             f"• **Alert Channel:** {ch_text}\n"
             f"• **Total Items Tracked:** `{len(ITEMS_CACHE):,}` (v{ITEMS_VERSION})\n"
             f"• **Check Frequency:** Every 1 second (Instant Leak Alert)\n"
-            f"• **Server Background Sync:** Every 30 minutes"
+            f"• **Server Background Sync:** Every 5 minutes"
         ),
         color=0x3498db
     )
