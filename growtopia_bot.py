@@ -15,19 +15,22 @@ if sys.platform == "win32":
         sys.exit(0)
 
 # Handle windowless / pythonw execution
-if sys.stdout is None:
-    sys.stdout = open(os.path.join(SCRIPT_DIR, "bot.log"), "a", encoding="utf-8")
-if sys.stderr is None:
-    sys.stderr = open(os.path.join(SCRIPT_DIR, "bot.log"), "a", encoding="utf-8")
+try:
+    if sys.stdout is None or not hasattr(sys.stdout, 'write'):
+        sys.stdout = open(os.path.join(SCRIPT_DIR, "bot.log"), "a", encoding="utf-8", buffering=1)
+    if sys.stderr is None or not hasattr(sys.stderr, 'write'):
+        sys.stderr = open(os.path.join(SCRIPT_DIR, "bot.log"), "a", encoding="utf-8", buffering=1)
+except Exception:
+    pass
 
 if hasattr(sys.stdout, 'reconfigure'):
     try:
-        sys.stdout.reconfigure(encoding='utf-8')
+        sys.stdout.reconfigure(encoding='utf-8', line_buffering=True)
     except Exception:
         pass
 if hasattr(sys.stderr, 'reconfigure'):
     try:
-        sys.stderr.reconfigure(encoding='utf-8')
+        sys.stderr.reconfigure(encoding='utf-8', line_buffering=True)
     except Exception:
         pass
 
@@ -180,13 +183,7 @@ def format_item_line(it):
     rarity = f"Rarity `{it.get('rarity', 0)}`" if it.get('rarity') else "Untradeable"
     slot = BODY_PART_MAP.get(it.get("body_part", 0), "")
     slot_str = f" *({slot})*" if slot and slot != "None / Block" else ""
-    line = f"• `#{it['id']}` **{it['name']}**{slot_str} — {rarity}"
-    if it.get("info"):
-        desc = it['info'].strip()
-        if len(desc) > 95:
-            desc = desc[:92] + "..."
-        line += f"\n  ╰ *\"{desc}\"*"
-    return line
+    return f"• `#{it['id']}` **{it['name']}**{slot_str} — {rarity}"
 
 def add_chunked_field(embed, field_name, lines, max_per_field=1000):
     chunk = []
@@ -1265,5 +1262,17 @@ async def auto_monitor():
         print(f"[Auto-Monitor Exception]: {e}")
 
 if __name__ == "__main__":
-    print("Starting Growtopia Discord Bot...")
-    bot.run(BOT_TOKEN)
+    print("Starting Growtopia Discord Bot...", flush=True)
+    import time
+    import traceback
+    while True:
+        try:
+            bot.run(BOT_TOKEN)
+        except KeyboardInterrupt:
+            print("[INFO] Bot stopped by user.", flush=True)
+            break
+        except Exception as e:
+            print(f"[FATAL EXCEPTION in bot.run]: {e}", flush=True)
+            traceback.print_exc()
+            time.sleep(5)
+            print("[Auto-Restart] Attempting to reconnect bot...", flush=True)
